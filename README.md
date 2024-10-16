@@ -2,7 +2,9 @@
 
 ## Overview
 
-This repository serves as a template monorepo for developing on multiple blockchains. The goal is to provide the generally recommended starting setups for each runtime along with pre-configured CI.
+This implementation provides a reference implementation of a transceiver that allows the GMP router to communicate over Wormhole.
+
+A transceiver MUST implement the `ITransceiver` interface defined in the GMP repo.
 
 ## Runtime Support
 

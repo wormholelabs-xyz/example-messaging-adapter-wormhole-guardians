@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {WormholeTransceiver} from "../src/WormholeTransceiver.sol";
+import "forge-std/Script.sol";
+
+// DeployWormholeTransceiver is a forge script to deploy the WormholeTransceiver contract. Use ./sh/deployWormholeTransceiver.sh to invoke this.
+contract DeployWormholeTransceiver is Script {
+    function dryRun(
+        uint16 ourChain,
+        uint256 evmChain,
+        address admin,
+        address router,
+        address wormhole,
+        uint8 consistencyLevel
+    ) public {
+        _deploy(ourChain, evmChain, admin, router, wormhole, consistencyLevel);
+    }
+
+    function run(
+        uint16 ourChain,
+        uint256 evmChain,
+        address admin,
+        address router,
+        address wormhole,
+        uint8 consistencyLevel
+    ) public returns (address deployedAddress) {
+        vm.startBroadcast();
+        (deployedAddress) = _deploy(ourChain, evmChain, admin, router, wormhole, consistencyLevel);
+        vm.stopBroadcast();
+    }
+
+    function _deploy(
+        uint16 ourChain,
+        uint256 evmChain,
+        address admin,
+        address router,
+        address wormhole,
+        uint8 consistencyLevel
+    ) internal returns (address deployedAddress) {
+        WormholeTransceiver wormholeTransceiver =
+            new WormholeTransceiver(ourChain, evmChain, admin, router, wormhole, consistencyLevel);
+
+        return (address(wormholeTransceiver));
+    }
+}
