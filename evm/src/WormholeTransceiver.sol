@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache 2
-pragma solidity >=0.8.8 <0.9.0;
+pragma solidity ^0.8.13;
 
 import "example-gmp-router/interfaces/IRouterTransceiver.sol";
-import "example-gmp-router/interfaces/ITransceiver.sol";
 
 import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
@@ -11,20 +10,21 @@ import "./interfaces/IWormholeTransceiver.sol";
 import "./libraries/TransceiverHelpers.sol";
 
 contract WormholeTransceiver is IWormholeTransceiver {
-    using BytesParsing for bytes;
+    using BytesParsing for bytes; // Used by _decodePayload
 
     string public constant versionString = "WormholeTransceiver-0.0.1";
     address public admin;
     address public pendingAdmin;
 
     // ==================== Immutables ===============================================
+
     uint16 public immutable ourChain;
     uint256 immutable evmChain;
     IRouterTransceiver public immutable router;
     IWormhole public immutable wormhole;
     uint8 public immutable consistencyLevel;
 
-    // ==================== Constants ================================================
+    // ==================== Constructor ==============================================
 
     constructor(
         uint16 _ourChain,
@@ -48,12 +48,12 @@ contract WormholeTransceiver is IWormholeTransceiver {
         consistencyLevel = _consistencyLevel;
     }
 
-    // =============== Storage ===============================================
+    // =============== Storage Keys =============================================
 
     bytes32 private constant WORMHOLE_PEERS_SLOT = bytes32(uint256(keccak256("whTransceiver.peers")) - 1);
     bytes32 private constant CHAINS_SLOT = bytes32(uint256(keccak256("whTransceiver.chains")) - 1);
 
-    // =============== Storage Setters/Getters ========================================
+    // =============== Storage Accessors ========================================
 
     function _getPeersStorage() internal pure returns (mapping(uint16 => bytes32) storage $) {
         uint256 slot = uint256(WORMHOLE_PEERS_SLOT);
@@ -182,7 +182,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
     }
 
     /// @inheritdoc ITransceiver
-    function quoteDeliveryPrice(uint16 dstChain) external view returns (uint256) {
+    function quoteDeliveryPrice(uint16 /*dstChain*/ ) external view returns (uint256) {
         return wormhole.messageFee();
     }
 
@@ -202,7 +202,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
     }
 
     /// @inheritdoc IWormholeTransceiver
-    function receiveMessage(bytes memory encodedMessage) external {
+    function receiveMessage(bytes calldata encodedMessage) external {
         // Verify the wormhole message and extract the source chain and payload.
         (uint16 srcChain, bytes memory payload) = _verifyMessage(encodedMessage);
 
@@ -264,8 +264,6 @@ contract WormholeTransceiver is IWormholeTransceiver {
     function _verifyMessage(bytes memory encodedMessage) internal returns (uint16, bytes memory) {
         // Verify VAA against Wormhole Core Bridge contract.
         (IWormhole.VM memory vm, bool valid, string memory reason) = wormhole.parseAndVerifyVM(encodedMessage);
-
-        // ensure that the VAA is valid
         if (!valid) {
             revert InvalidVaa(reason);
         }

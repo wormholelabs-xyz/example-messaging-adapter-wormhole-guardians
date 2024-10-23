@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.13;
 
 import {WormholeTransceiver} from "../src/WormholeTransceiver.sol";
 import "forge-std/Script.sol";
 
 // DeployWormholeTransceiver is a forge script to deploy the WormholeTransceiver contract. Use ./sh/deployWormholeTransceiver.sh to invoke this.
 contract DeployWormholeTransceiver is Script {
+    function test() public {} // Exclude this from coverage report.
+
     function dryRun(
         uint16 ourChain,
         uint256 evmChain,

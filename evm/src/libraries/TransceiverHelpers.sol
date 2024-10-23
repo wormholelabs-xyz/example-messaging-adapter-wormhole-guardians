@@ -1,28 +1,20 @@
 // SPDX-License-Identifier: Apache 2
-pragma solidity >=0.8.8 <0.9.0;
+pragma solidity ^0.8.13;
 
+/// @notice A fork has occurred.
+/// @dev Selector: 0x77d879fb
+/// @param evmChainId The configured EVM chain ID.
+/// @param blockChainId The current EVM chain ID.
 error InvalidFork(uint256 evmChainId, uint256 blockChainId);
 
+// @dev Checks to see if a fork has occurred.
 function checkFork(uint256 evmChainId) view {
     if (isFork(evmChainId)) {
         revert InvalidFork(evmChainId, block.chainid);
     }
 }
 
+// @dev Returns true if a fork has occurred.
 function isFork(uint256 evmChainId) view returns (bool) {
     return evmChainId != block.chainid;
-}
-
-function min(uint256 a, uint256 b) pure returns (uint256) {
-    return a < b ? a : b;
-}
-
-// @dev Count the number of set bits in a uint64
-function countSetBits(uint64 x) pure returns (uint8 count) {
-    while (x != 0) {
-        x &= x - 1;
-        count++;
-    }
-
-    return count;
 }

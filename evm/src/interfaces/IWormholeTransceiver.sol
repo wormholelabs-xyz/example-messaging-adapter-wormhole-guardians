@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache 2
-pragma solidity >=0.8.8 <0.9.0;
+pragma solidity ^0.8.13;
 
 import "example-gmp-router/interfaces/ITransceiver.sol";
 
@@ -37,9 +37,9 @@ interface IWormholeTransceiver is ITransceiver {
     /// @notice Emitted when a peer transceiver is set.
     /// @dev Topic0
     ///      0xb54661e84edd2fae127113fec00db0f3a82af37b0347eefb108eba05122224e7
-    /// @param chainId The chain ID of the peer.
+    /// @param chain The Wormhole chain ID of the peer.
     /// @param peerContract The address of the peer contract.
-    event PeerAdded(uint16 chainId, bytes32 peerContract);
+    event PeerAdded(uint16 chain, bytes32 peerContract);
 
     /// @notice Emitted when a message is sent from the transceiver.
     /// @dev Topic0
@@ -57,7 +57,7 @@ interface IWormholeTransceiver is ITransceiver {
     /// @dev Topic0
     ///     0x5ca30e27fb77c6ca1ed58126d3c96e979a7a3ac370738f72ea998af0dcff2e04
     /// @param digest The digest of the message.
-    /// @param emitterChain The chain ID of the emitter.
+    /// @param emitterChain The Wormhole chain ID of the emitter.
     /// @param emitterAddress The address of the emitter.
     /// @param sequence The sequence of the message.
     event MessageReceived(bytes32 digest, uint16 emitterChain, bytes32 emitterAddress, uint64 sequence);
@@ -88,24 +88,24 @@ interface IWormholeTransceiver is ITransceiver {
 
     /// @notice Error if the peer has already been set.
     /// @dev Selector: 0xb55eeae9
-    /// @param chainId The chain ID of the peer.
+    /// @param chain The Wormhole chain ID of the peer.
     /// @param peerAddress The address of the peer.
-    error PeerAlreadySet(uint16 chainId, bytes32 peerAddress);
+    error PeerAlreadySet(uint16 chain, bytes32 peerAddress);
 
     /// @notice Error the peer contract cannot be the zero address.
-    /// @dev Selector: 0x26e0c7de
+    /// @dev Selector: 0xf839a0cb
     error InvalidPeerZeroAddress();
 
     /// @notice Error when the chain ID doesn't match this chain.
     /// @dev Selector: 0x587c94c3
-    /// @param chainId The chain ID of the peer.
-    error InvalidChain(uint16 chainId);
+    /// @param chain The Wormhole chain ID of the peer.
+    error InvalidChain(uint16 chain);
 
     /// @notice Error when the peer transceiver is invalid.
-    /// @dev Selector: 0x79b1ce56
-    /// @param chainId The chain ID of the peer.
+    /// @dev Selector: 0xaf1181fa
+    /// @param chain The Wormhole chain ID of the peer.
     /// @param peerAddress The address of the invalid peer.
-    error InvalidPeer(uint16 chainId, bytes32 peerAddress);
+    error InvalidPeer(uint16 chain, bytes32 peerAddress);
 
     /// @notice Length of transceiver payload is wrong.
     /// @dev Selector: 0xc37906a0
@@ -134,9 +134,9 @@ interface IWormholeTransceiver is ITransceiver {
     function discardAdmin() external;
 
     /// @notice Get the peer Transceiver contract on the specified chain.
-    /// @param chainId The Wormhole chain ID of the peer to get.
+    /// @param chain The Wormhole chain ID of the peer to get.
     /// @return peerContract The address of the peer contract on the given chain.
-    function getPeer(uint16 chainId) external view returns (bytes32);
+    function getPeer(uint16 chain) external view returns (bytes32);
 
     /// @notice Returns an array of all the peers to which this transceiver is connected.
     /// @return results An array of all of the connected peers including the chain id and contract address of each.
@@ -145,13 +145,13 @@ interface IWormholeTransceiver is ITransceiver {
     /// @notice Set the Wormhole peer contract for the given chain.
     /// @dev This function is only callable by the `owner`.
     ///      Once the peer is set for a chain it may not be changed.
-    /// @param chainId The Wormhole chain ID of the peer to set.
+    /// @param chain The Wormhole chain ID of the peer to set.
     /// @param peerContract The address of the peer contract on the given chain.
-    function setPeer(uint16 chainId, bytes32 peerContract) external;
+    function setPeer(uint16 chain, bytes32 peerContract) external;
 
     /// @notice Receive an attested message from the verification layer.
     ///         This function should verify the `encodedVm` and then deliver the attestation
     /// to the transceiver NttManager contract.
     /// @param encodedMessage The attested message.
-    function receiveMessage(bytes memory encodedMessage) external;
+    function receiveMessage(bytes calldata encodedMessage) external;
 }
