@@ -190,11 +190,11 @@ contract WormholeTransceiver is IWormholeTransceiver {
     /// @dev The caller should set the delivery price in msg.value.
     function sendMessage(
         UniversalAddress srcAddr,
+        uint64 sequence,
         uint16 dstChain,
         UniversalAddress dstAddr,
-        uint64 sequence,
         bytes32 payloadHash,
-        bytes32 // refundAddr
+        address // refundAddr
     ) external payable onlyRouter {
         bytes memory payload = _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
         wormhole.publishMessage{value: msg.value}(0, payload, consistencyLevel);

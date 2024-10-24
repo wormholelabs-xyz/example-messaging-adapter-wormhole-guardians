@@ -288,11 +288,11 @@ contract WormholeTransceiverTest is Test {
         UniversalAddress dstAddr = UniversalAddressLibrary.fromAddress(address(peerAddress1));
         uint64 sequence = 42;
         bytes32 payloadHash = keccak256("message one");
-        bytes32 refundAddr = UniversalAddressLibrary.fromAddress(address(userA)).toBytes32();
+        address refundAddr = userA;
         uint256 deliverPrice = 382;
 
         vm.startPrank(routerAddr);
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, dstChain, dstAddr, sequence, payloadHash, refundAddr);
+        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
 
         // And you can receive a message while a transfer is pending.
         destTransceiver.receiveMessage(srcWormhole.lastVaa());
@@ -403,11 +403,11 @@ contract WormholeTransceiverTest is Test {
         UniversalAddress dstAddr = UniversalAddressLibrary.fromAddress(address(peerAddress1));
         uint64 sequence = 42;
         bytes32 payloadHash = keccak256("message one");
-        bytes32 refundAddr = UniversalAddressLibrary.fromAddress(address(userA)).toBytes32();
+        address refundAddr = userA;
         uint256 deliverPrice = 382;
 
         vm.startPrank(routerAddr);
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, dstChain, dstAddr, sequence, payloadHash, refundAddr);
+        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
 
         require(srcWormhole.messagesSent() == 1, "Message count is wrong");
         require(srcWormhole.lastNonce() == 0, "Nonce is wrong");
@@ -422,7 +422,7 @@ contract WormholeTransceiverTest is Test {
         // Only the router can call send message.
         vm.startPrank(someoneElse);
         vm.expectRevert(abi.encodeWithSelector(ITransceiver.CallerNotRouter.selector, someoneElse));
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, dstChain, dstAddr, sequence, payloadHash, refundAddr);
+        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
     }
 
     function test_receiveMessage() public {
@@ -436,11 +436,11 @@ contract WormholeTransceiverTest is Test {
         UniversalAddress dstAddr = UniversalAddressLibrary.fromAddress(address(peerAddress1));
         uint64 sequence = 42;
         bytes32 payloadHash = keccak256("message one");
-        bytes32 refundAddr = UniversalAddressLibrary.fromAddress(address(userA)).toBytes32();
+        address refundAddr = userA;
         uint256 deliverPrice = 382;
 
         vm.startPrank(routerAddr);
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, dstChain, dstAddr, sequence, payloadHash, refundAddr);
+        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
         bytes memory vaa = srcWormhole.lastVaa();
 
         // This should work.
