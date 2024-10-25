@@ -3,7 +3,7 @@
 #
 # This script submits a message to the WormholeTransceiver contract.
 # Usage: RPC_URL= MNEMONIC= WT_ADDR= VAA= ./sh/receiveMsg.sh
-#  tilt: WT_ADDR=0x1aBE68277AE236083947f2551FEe8b885efCA8f5 VAA= ./sh/receiveMsg.sh
+#  tilt: WT_ADDR=0xdFccc9C59c7361307d47c558ffA75840B32DbA29 VAA= ./sh/receiveMsg.sh
 #
 
 [[ -z $WT_ADDR ]] && { echo "Missing WT_ADDR"; exit 1; }

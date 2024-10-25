@@ -9,10 +9,12 @@ import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
 import "./interfaces/IWormholeTransceiver.sol";
 import "./libraries/TransceiverHelpers.sol";
 
+string constant wormholeTransceiverVersionString = "WormholeTransceiver-0.0.1";
+
 contract WormholeTransceiver is IWormholeTransceiver {
     using BytesParsing for bytes; // Used by _decodePayload
 
-    string public constant versionString = "WormholeTransceiver-0.0.1";
+    string public constant versionString = wormholeTransceiverVersionString;
     address public admin;
     address public pendingAdmin;
 

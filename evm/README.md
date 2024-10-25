@@ -73,6 +73,28 @@ The payload of the Wormhole messages consists of the following fields encoded us
 		bytes32 payloadHash
 ```
 
+## Deployment and Administration
+
+### Deploying the Wormhole Transceiver Contract
+
+The contract can be deployed using the following command.
+
+```shell
+evm$ RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ROUTER= WORMHOLE= CONSISTENCY_LEVEL= ./sh/deployWormholeTransceiver.sh
+```
+
+Note that the deploy script uses `create2` to generate a deterministic contract address.
+
+### Configuring Peer Transceivers
+
+To configure a peer Wormhole Transceiver for a given chain, you can use the following command.
+
+```shell
+evm$ RPC_URL= MNEMONIC=WT_ADDR= PEER_CHAIN_ID= PEER_ADDR= ./sh/setPeer.sh
+```
+
+Note that `PEER_CHAIN_ID` is a Wormhole CHAIN ID and the `PEER_ADDR` is a `UniversalAddress` expressed as a `bytes32` beginning with `0x`.
+
 ## Development
 
 ### Foundry
