@@ -15,3 +15,6 @@ docs/
 
 # Code coverage
 lcov.info
+
+# Flattened source
+flattened

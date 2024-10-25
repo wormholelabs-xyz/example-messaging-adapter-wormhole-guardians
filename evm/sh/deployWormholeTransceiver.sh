@@ -3,7 +3,6 @@
 #
 # This script deploys the WormholeTransceiver contract.
 # Usage: RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ROUTER= WORMHOLE= CONSISTENCY_LEVEL= ./sh/deployWormholeTransceiver.sh
-#  To verify the contract add: FORGE_ARGS="--verifier-url 'https://api.routescan.io/v2/network/testnet/evm/${EVM_CHAIN_ID}/etherscan' --etherscan-api-key 'verifyContract'"
 #  tilt: ROUTER=0x1aBE68277AE236083947f2551FEe8b885efCA8f5 ./sh/deployWormholeTransceiver.sh
 #
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache 2
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 /// @notice A fork has occurred.
 /// @dev Selector: 0x77d879fb

@@ -85,12 +85,29 @@ evm$ RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ROUTER= WORMHOLE= CON
 
 Note that the deploy script uses `create2` to generate a deterministic contract address.
 
+### Generating Flattened Source
+
+If you need to generate flattened source to be used for contract verification, you can use the following command. The results will be in `evm/flattened`.
+
+```shell
+evm$ ./sh/flatten.sh
+```
+
+### Verifying the Wormhole Transceiver Contract
+
+To verify the WormholeTransceiver contract, do something like this:
+
+```shell
+evm$ forge verify-contract --etherscan-api-key $ETHERSCAN_KEY --verifier etherscan --chain sepolia --watch --constructor-args $(cast abi-encode "constructor(uint16,uint256,address,address,address,uint8)" 10002 11155111 0x49887A216375FDED17DC1aAAD4920c3777265614 0xB3375116c00873D3ED5781edFE304aC9cC75eA56 0x4a8bc80Ed5a4067f1CCf107057b8270E0c
+C11A78 200)  0xB3375116c00873D3ED5781edFE304aC9cC75eA56 ./src/WormholeTransceiver.sol:WormholeTransceiver
+```
+
 ### Configuring Peer Transceivers
 
 To configure a peer Wormhole Transceiver for a given chain, you can use the following command.
 
 ```shell
-evm$ RPC_URL= MNEMONIC=WT_ADDR= PEER_CHAIN_ID= PEER_ADDR= ./sh/setPeer.sh
+evm$ RPC_URL= MNEMONIC= WT_ADDR= PEER_CHAIN_ID= PEER_ADDR= ./sh/setPeer.sh
 ```
 
 Note that `PEER_CHAIN_ID` is a Wormhole CHAIN ID and the `PEER_ADDR` is a `UniversalAddress` expressed as a `bytes32` beginning with `0x`.
