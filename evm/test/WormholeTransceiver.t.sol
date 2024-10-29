@@ -464,16 +464,6 @@ contract WormholeTransceiverTest is Test {
         vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidVaa.selector, "This is bad!"));
         destTransceiver.receiveMessage(vaa);
         destWormhole.setValidFlag(true, "");
-
-        // Can't post to the wrong chain.
-        WormholeTransceiverForTest destTransceiver2 = new WormholeTransceiverForTest(
-            destChain + 1, ourevmChain, admin, address(destRouter), address(destWormhole), consistencyLevel
-        );
-        vm.startPrank(admin);
-        destTransceiver2.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcTransceiver)).toBytes32());
-        vm.startPrank(integratorAddr);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidChain.selector, destChain));
-        destTransceiver2.receiveMessage(vaa);
     }
 
     function test_encodeDecode() public {

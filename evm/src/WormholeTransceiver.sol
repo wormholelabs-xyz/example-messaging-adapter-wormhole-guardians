@@ -7,7 +7,6 @@ import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
 
 import "./interfaces/IWormholeTransceiver.sol";
-import "./libraries/TransceiverHelpers.sol";
 
 string constant wormholeTransceiverVersionString = "WormholeTransceiver-0.0.1";
 
@@ -212,10 +211,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
         (UniversalAddress srcAddr, uint64 sequence, uint16 dstChain, UniversalAddress dstAddr, bytes32 payloadHash) =
             _decodePayload(payload);
 
-        // Make sure this payload is meant for us.
-        if (dstChain != ourChain) {
-            revert InvalidChain(dstChain);
-        }
+        // Not validating that the dest chain is our chain because the router does that.
 
         // Post the message to the router.
         router.attestMessage(srcChain, srcAddr, sequence, ourChain, dstAddr, payloadHash);
@@ -271,17 +267,12 @@ contract WormholeTransceiver is IWormholeTransceiver {
         }
 
         // Ensure that the message came from the registered peer contract.
-        if (!_verifyPeer(vm)) {
+        if (getPeer(vm.emitterChainId) != vm.emitterAddress) {
             revert InvalidPeer(vm.emitterChainId, vm.emitterAddress);
         }
 
         emit MessageReceived(vm.hash, vm.emitterChainId, vm.emitterAddress, vm.sequence);
         return (vm.emitterChainId, vm.payload);
-    }
-
-    function _verifyPeer(IWormhole.VM memory vm) internal view returns (bool) {
-        checkFork(evmChain);
-        return getPeer(vm.emitterChainId) == vm.emitterAddress;
     }
 
     function _checkLength(bytes memory payload, uint256 expected) private pure {
