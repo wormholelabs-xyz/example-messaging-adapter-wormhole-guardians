@@ -20,28 +20,18 @@ contract WormholeTransceiver is IWormholeTransceiver {
     // ==================== Immutables ===============================================
 
     uint16 public immutable ourChain;
-    uint256 immutable evmChain;
     IRouterTransceiver public immutable router;
     IWormhole public immutable wormhole;
     uint8 public immutable consistencyLevel;
 
     // ==================== Constructor ==============================================
 
-    constructor(
-        uint16 _ourChain,
-        uint256 _evmChain,
-        address _admin,
-        address _router,
-        address _wormhole,
-        uint8 _consistencyLevel
-    ) {
+    constructor(uint16 _ourChain, address _admin, address _router, address _wormhole, uint8 _consistencyLevel) {
         assert(_ourChain != 0);
-        assert(_evmChain != 0);
         assert(_admin != address(0));
         assert(_router != address(0));
         assert(_wormhole != address(0));
         // Not checking consistency level since maybe zero is valid?
-        evmChain = _evmChain;
         ourChain = _ourChain;
         admin = _admin;
         router = IRouterTransceiver(_router);
@@ -214,7 +204,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
         // Not validating that the dest chain is our chain because the router does that.
 
         // Post the message to the router.
-        router.attestMessage(srcChain, srcAddr, sequence, ourChain, dstAddr, payloadHash);
+        router.attestMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
 
         // We don't need to emit an event here because _verifyMessage already did.
     }

@@ -8,41 +8,26 @@ import "forge-std/Script.sol";
 contract DeployWormholeTransceiver is Script {
     function test() public {} // Exclude this from coverage report.
 
-    function dryRun(
-        uint16 ourChain,
-        uint256 evmChain,
-        address admin,
-        address router,
-        address wormhole,
-        uint8 consistencyLevel
-    ) public {
-        _deploy(ourChain, evmChain, admin, router, wormhole, consistencyLevel);
+    function dryRun(uint16 ourChain, address admin, address router, address wormhole, uint8 consistencyLevel) public {
+        _deploy(ourChain, admin, router, wormhole, consistencyLevel);
     }
 
-    function run(
-        uint16 ourChain,
-        uint256 evmChain,
-        address admin,
-        address router,
-        address wormhole,
-        uint8 consistencyLevel
-    ) public returns (address deployedAddress) {
+    function run(uint16 ourChain, address admin, address router, address wormhole, uint8 consistencyLevel)
+        public
+        returns (address deployedAddress)
+    {
         vm.startBroadcast();
-        (deployedAddress) = _deploy(ourChain, evmChain, admin, router, wormhole, consistencyLevel);
+        (deployedAddress) = _deploy(ourChain, admin, router, wormhole, consistencyLevel);
         vm.stopBroadcast();
     }
 
-    function _deploy(
-        uint16 ourChain,
-        uint256 evmChain,
-        address admin,
-        address router,
-        address wormhole,
-        uint8 consistencyLevel
-    ) internal returns (address deployedAddress) {
+    function _deploy(uint16 ourChain, address admin, address router, address wormhole, uint8 consistencyLevel)
+        internal
+        returns (address deployedAddress)
+    {
         bytes32 salt = keccak256(abi.encodePacked(wormholeTransceiverVersionString));
         WormholeTransceiver wormholeTransceiver =
-            new WormholeTransceiver{salt: salt}(ourChain, evmChain, admin, router, wormhole, consistencyLevel);
+            new WormholeTransceiver{salt: salt}(ourChain, admin, router, wormhole, consistencyLevel);
 
         return (address(wormholeTransceiver));
     }

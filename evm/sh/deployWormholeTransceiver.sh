@@ -37,7 +37,7 @@ if [ "${CONSISTENCY_LEVEL}X" == "X" ]; then
 fi
 
 forge script ./script/DeployWormholeTransceiver.s.sol:DeployWormholeTransceiver \
-	--sig "run(uint16,uint256,address,address,address,uint8)" $OUR_CHAIN_ID $EVM_CHAIN_ID $ADMIN $ROUTER $WORMHOLE $CONSISTENCY_LEVEL \
+	--sig "run(uint16,address,address,address,uint8)" $OUR_CHAIN_ID $ADMIN $ROUTER $WORMHOLE $CONSISTENCY_LEVEL \
 	--rpc-url "$RPC_URL" \
 	--private-key "$MNEMONIC" \
 	--broadcast ${FORGE_ARGS}

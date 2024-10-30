@@ -9,14 +9,9 @@ import "../src/WormholeTransceiver.sol";
 import "../src/interfaces/IWormholeTransceiver.sol";
 
 contract WormholeTransceiverForTest is WormholeTransceiver {
-    constructor(
-        uint16 _ourChain,
-        uint256 _ourevmChain,
-        address _admin,
-        address _router,
-        address srcWormhole,
-        uint8 _consistencyLevel
-    ) WormholeTransceiver(_ourChain, _ourevmChain, _admin, _router, srcWormhole, _consistencyLevel) {}
+    constructor(uint16 _ourChain, address _admin, address _router, address srcWormhole, uint8 _consistencyLevel)
+        WormholeTransceiver(_ourChain, _admin, _router, srcWormhole, _consistencyLevel)
+    {}
 
     function encodePayload(
         UniversalAddress srcAddr,
@@ -164,7 +159,6 @@ contract WormholeTransceiverTest is Test {
     uint8 consistencyLevel = 200;
 
     uint16 ourChain = 42;
-    uint256 ourevmChain = 31337;
 
     uint16 srcChain = 42;
     uint16 destChain = 43;
@@ -182,12 +176,11 @@ contract WormholeTransceiverTest is Test {
         routerAddr = address(srcRouter);
         destRouter = new MockRouter(destChain);
         srcWormhole = new MockWormhole(srcChain);
-        srcTransceiver = new WormholeTransceiverForTest(
-            srcChain, ourevmChain, admin, routerAddr, address(srcWormhole), consistencyLevel
-        );
+        srcTransceiver =
+            new WormholeTransceiverForTest(srcChain, admin, routerAddr, address(srcWormhole), consistencyLevel);
         destWormhole = new MockWormhole(destChain);
         destTransceiver = new WormholeTransceiverForTest(
-            destChain, ourevmChain, admin, address(destRouter), address(destWormhole), consistencyLevel
+            destChain, admin, address(destRouter), address(destWormhole), consistencyLevel
         );
 
         // Give everyone some money to play with.
@@ -208,25 +201,19 @@ contract WormholeTransceiverTest is Test {
     function test_invalidInit() public {
         // ourChain can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(0, ourevmChain, admin, address(destRouter), address(destWormhole), consistencyLevel);
-
-        // evmChain can't be zero.
-        vm.expectRevert();
-        new WormholeTransceiver(destChain, 0, admin, address(destRouter), address(destWormhole), consistencyLevel);
+        new WormholeTransceiver(0, admin, address(destRouter), address(destWormhole), consistencyLevel);
 
         // admin can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(
-            destChain, ourevmChain, address(0), address(destRouter), address(destWormhole), consistencyLevel
-        );
+        new WormholeTransceiver(destChain, address(0), address(destRouter), address(destWormhole), consistencyLevel);
 
         // router can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(destChain, ourevmChain, admin, address(0), address(destWormhole), consistencyLevel);
+        new WormholeTransceiver(destChain, admin, address(0), address(destWormhole), consistencyLevel);
 
         // wormhole can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(destChain, ourevmChain, admin, address(destRouter), address(0), consistencyLevel);
+        new WormholeTransceiver(destChain, admin, address(destRouter), address(0), consistencyLevel);
     }
 
     function test_updateAdmin() public {
@@ -464,6 +451,23 @@ contract WormholeTransceiverTest is Test {
         vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidVaa.selector, "This is bad!"));
         destTransceiver.receiveMessage(vaa);
         destWormhole.setValidFlag(true, "");
+
+        // The transceiver should not block a message with the wrong dest chain because the router does that.
+        uint16 diffDestChain = destChain + 1;
+        WormholeTransceiverForTest destTransceiver2 = new WormholeTransceiverForTest(
+            diffDestChain, admin, address(destRouter), address(destWormhole), consistencyLevel
+        );
+        vm.startPrank(admin);
+        destTransceiver2.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcTransceiver)).toBytes32());
+        vm.startPrank(integratorAddr);
+        destTransceiver2.receiveMessage(vaa);
+
+        require(destRouter.lastSourceChain() == srcChain, "srcChain is wrong 2");
+        require(destRouter.lastSourceAddress() == srcAddr, "srcAddr is wrong 2");
+        require(destRouter.lastSequence() == sequence, "sequence is wrong 2");
+        require(destRouter.lastDestinationChain() == dstChain, "dstChain in vaa is wrong");
+        require(destRouter.lastDestinationAddress() == dstAddr, "dstAddr is wrong 2");
+        require(destRouter.lastPayloadHash() == payloadHash, "payloadHash is wrong 2");
     }
 
     function test_encodeDecode() public {
