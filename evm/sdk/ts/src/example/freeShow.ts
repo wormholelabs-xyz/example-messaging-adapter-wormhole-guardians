@@ -29,30 +29,17 @@ function getProvider(rpc: string) {
     console.log(`\n\nNetwork: ${network.name}`);
     console.log(`RPC URL: ${network.rpc}`);
     console.log(`WH Transceiver: ${network.whTransceiver}`);
-		const provider = getProvider(network.rpc);
-    const adminAddr = await admin(
-      network.whTransceiver,
-      provider,
-    );
+    const provider = getProvider(network.rpc);
+    const adminAddr = await admin(network.whTransceiver, provider);
     console.log("Admin:", adminAddr);
 
-    const pendAdmin = await pendingAdmin(
-      network.whTransceiver,
-      provider,
-    );
+    const pendAdmin = await pendingAdmin(network.whTransceiver, provider);
     console.log("pendingAdmin:", pendAdmin);
 
-    const peer = await getPeer(
-      network.whTransceiver,
-      provider,
-      network.peer,
-    );
+    const peer = await getPeer(network.whTransceiver, provider, network.peer);
     console.log("Peer:", peer);
 
-		const peers = await getPeers(
-      network.whTransceiver,
-      provider,
-    );
+    const peers = await getPeers(network.whTransceiver, provider);
     console.log("Peers:", peers);
   }
 })();
