@@ -8,7 +8,7 @@
     "ethers": "^6.13.4",
     "typechain": "^8.3.2"
   },
-    "scripts": {
+  "scripts": {
     "build:abi": "cd evm && forge build && typechain --target=ethers-v6 --out-dir=sdk/ts/src/abi \"out/!(test).sol/*.json\"",
     "build:sdk": "cd evm/sdk/ts/src && tsc"
   },
