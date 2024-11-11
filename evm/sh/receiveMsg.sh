@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #
-# This script submits a message to the WormholeTransceiver contract.
-# Usage: RPC_URL= MNEMONIC= WT_ADDR= VAA= ./sh/receiveMsg.sh
-#  tilt: WT_ADDR=0xdFccc9C59c7361307d47c558ffA75840B32DbA29 VAA= ./sh/receiveMsg.sh
+# This script submits a message to the WormholeGuardiansAdapter contract.
+# Usage: RPC_URL= MNEMONIC= WGA_ADDR= VAA= ./sh/receiveMsg.sh
+#  tilt: WGA_ADDR=0xdFccc9C59c7361307d47c558ffA75840B32DbA29 VAA= ./sh/receiveMsg.sh
 #
 
-[[ -z $WT_ADDR ]] && { echo "Missing WT_ADDR"; exit 1; }
+[[ -z $WGA_ADDR ]] && { echo "Missing WGA_ADDR"; exit 1; }
 [[ -z $VAA ]] && { echo "Missing VAA"; exit 1; }
 
 if [ "${RPC_URL}X" == "X" ]; then
@@ -18,7 +18,7 @@ if [ "${MNEMONIC}X" == "X" ]; then
 fi
 
 forge script ./script/ReceiveMsg.s.sol:ReceiveMsg \
-	--sig "run(address,bytes)" $WT_ADDR $VAA \
+	--sig "run(address,bytes)" $WGA_ADDR $VAA \
 	--rpc-url $RPC_URL \
 	--private-key $MNEMONIC \
 	--broadcast

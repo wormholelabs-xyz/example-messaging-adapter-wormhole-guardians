@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache 2
 pragma solidity ^0.8.19;
 
-import "example-gmp-router/interfaces/ITransceiver.sol";
+import "example-messaging-endpoint/evm/src/interfaces/IAdapter.sol";
 
-interface IWormholeTransceiver is ITransceiver {
+interface IWormholeGuardiansAdapter is IAdapter {
     // =============== Types ================================================================
 
     /// @notice Defines each entry in the array returned by getPeers.
@@ -34,14 +34,14 @@ interface IWormholeTransceiver is ITransceiver {
     /// @param oldAdmin The address of the old admin contract.
     event AdminDiscarded(address oldAdmin);
 
-    /// @notice Emitted when a peer transceiver is set.
+    /// @notice Emitted when a peer adapter is set.
     /// @dev Topic0
     ///      0xb54661e84edd2fae127113fec00db0f3a82af37b0347eefb108eba05122224e7
     /// @param chain The Wormhole chain ID of the peer.
     /// @param peerContract The address of the peer contract.
     event PeerAdded(uint16 chain, bytes32 peerContract);
 
-    /// @notice Emitted when a message is sent from the transceiver.
+    /// @notice Emitted when a message is sent from the adapter.
     /// @dev Topic0
     ///      0x538adc4f44128ecd04c5b39098e01f60938ab03d019a24fde085a6d2e643864f
     /// @param srcAddr The universal address of the sender.
@@ -101,13 +101,13 @@ interface IWormholeTransceiver is ITransceiver {
     /// @param chain The Wormhole chain ID of the peer.
     error InvalidChain(uint16 chain);
 
-    /// @notice Error when the peer transceiver is invalid.
+    /// @notice Error when the peer adapter is invalid.
     /// @dev Selector: 0xaf1181fa
     /// @param chain The Wormhole chain ID of the peer.
     /// @param peerAddress The address of the invalid peer.
     error InvalidPeer(uint16 chain, bytes32 peerAddress);
 
-    /// @notice Length of transceiver payload is wrong.
+    /// @notice Length of adapter payload is wrong.
     /// @dev Selector: 0xc37906a0
     /// @param received Number of payload bytes received.
     /// @param expected Number of payload bytes expected.
@@ -133,12 +133,12 @@ interface IWormholeTransceiver is ITransceiver {
     /// @dev The msg.sender must be the current admin contract.
     function discardAdmin() external;
 
-    /// @notice Get the peer Transceiver contract on the specified chain.
+    /// @notice Get the peer Adapter contract on the specified chain.
     /// @param chain The Wormhole chain ID of the peer to get.
     /// @return peerContract The address of the peer contract on the given chain.
     function getPeer(uint16 chain) external view returns (bytes32);
 
-    /// @notice Returns an array of all the peers to which this transceiver is connected.
+    /// @notice Returns an array of all the peers to which this adapter is connected.
     /// @return results An array of all of the connected peers including the chain id and contract address of each.
     function getPeers() external view returns (PeerEntry[] memory results);
 
@@ -151,7 +151,7 @@ interface IWormholeTransceiver is ITransceiver {
 
     /// @notice Receive an attested message from the verification layer.
     ///         This function should verify the `encodedVm` and then deliver the attestation
-    /// to the transceiver NttManager contract.
+    /// to the adapter NttManager contract.
     /// @param encodedMessage The attested message.
     function receiveMessage(bytes calldata encodedMessage) external;
 }

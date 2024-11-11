@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {WormholeTransceiver} from "../src/WormholeTransceiver.sol";
+import {WormholeGuardiansAdapter} from "../src/WormholeGuardiansAdapter.sol";
 import "forge-std/Script.sol";
-import "example-gmp-router/libraries/UniversalAddress.sol";
+import "example-messaging-endpoint/evm/src/libraries/UniversalAddress.sol";
 
-// ReceiveMsg is a forge script to receive a message on the WormholeTransceiver contract. Use ./sh/receiveMsg.sh to invoke this.
+// ReceiveMsg is a forge script to receive a message on the WormholeGuardiansAdapter contract. Use ./sh/receiveMsg.sh to invoke this.
 contract ReceiveMsg is Script {
     function test() public {} // Exclude this from coverage report.
 
-    function dryRun(address wormholeTransceiver, bytes calldata vaaBytes) public {
-        _receiveMsg(wormholeTransceiver, vaaBytes);
+    function dryRun(address wormholeGuardiansAdapter, bytes calldata vaaBytes) public {
+        _receiveMsg(wormholeGuardiansAdapter, vaaBytes);
     }
 
-    function run(address wormholeTransceiver, bytes calldata vaaBytes) public {
+    function run(address wormholeGuardiansAdapter, bytes calldata vaaBytes) public {
         vm.startBroadcast();
-        _receiveMsg(wormholeTransceiver, vaaBytes);
+        _receiveMsg(wormholeGuardiansAdapter, vaaBytes);
         vm.stopBroadcast();
     }
 
-    function _receiveMsg(address wormholeTransceiver, bytes calldata vaaBytes) internal {
-        WormholeTransceiver wormholeTransceiverContract = WormholeTransceiver(wormholeTransceiver);
-        wormholeTransceiverContract.receiveMessage(vaaBytes);
+    function _receiveMsg(address wormholeGuardiansAdapter, bytes calldata vaaBytes) internal {
+        WormholeGuardiansAdapter wormholeGuardiansAdapterContract = WormholeGuardiansAdapter(wormholeGuardiansAdapter);
+        wormholeGuardiansAdapterContract.receiveMessage(vaaBytes);
     }
 }

@@ -1,7 +1,7 @@
 rm -rf flattened
 mkdir flattened
 for fileName in \
-src/WormholeTransceiver.sol
+src/WormholeGuardiansAdapter.sol
   do
 	echo $fileName
 	flattened=flattened/`basename $fileName`

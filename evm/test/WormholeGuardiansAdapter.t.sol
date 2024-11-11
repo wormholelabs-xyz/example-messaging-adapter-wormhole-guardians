@@ -4,13 +4,13 @@ pragma solidity ^0.8.13;
 import {Test, console} from "forge-std/Test.sol";
 import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
-import "example-gmp-router/libraries/UniversalAddress.sol";
-import "../src/WormholeTransceiver.sol";
-import "../src/interfaces/IWormholeTransceiver.sol";
+import "example-messaging-endpoint/evm/src/libraries/UniversalAddress.sol";
+import "../src/WormholeGuardiansAdapter.sol";
+import "../src/interfaces/IWormholeGuardiansAdapter.sol";
 
-contract WormholeTransceiverForTest is WormholeTransceiver {
-    constructor(uint16 _ourChain, address _admin, address _router, address srcWormhole, uint8 _consistencyLevel)
-        WormholeTransceiver(_ourChain, _admin, _router, srcWormhole, _consistencyLevel)
+contract WormholeGuardiansAdapterForTest is WormholeGuardiansAdapter {
+    constructor(uint16 _ourChain, address _admin, address _endpoint, address srcWormhole, uint8 _consistencyLevel)
+        WormholeGuardiansAdapter(_ourChain, _admin, _endpoint, srcWormhole, _consistencyLevel)
     {}
 
     function encodePayload(
@@ -101,7 +101,7 @@ contract MockWormhole {
         valid = validFlag;
         reason = invalidReason;
 
-        // These are the fields that the transceiver uses:
+        // These are the fields that the adapter uses:
         // vm.emitterChainId
         // vm.emitterAddress
         // vm.hash
@@ -112,7 +112,7 @@ contract MockWormhole {
     }
 }
 
-contract MockRouter {
+contract MockEndpoint {
     uint16 public immutable ourChain;
 
     // These are set on calls.
@@ -144,18 +144,18 @@ contract MockRouter {
     }
 }
 
-contract WormholeTransceiverTest is Test {
+contract WormholeGuardiansAdapterTest is Test {
     address admin = address(0xabcdef);
-    MockRouter srcRouter;
-    MockRouter destRouter;
-    address routerAddr;
+    MockEndpoint srcEndpoint;
+    MockEndpoint destEndpoint;
+    address endpointAddr;
     address integratorAddr = address(0xabcded);
     address userA = address(0xabcdec);
     address someoneElse = address(0xabcdeb);
     MockWormhole srcWormhole;
-    WormholeTransceiverForTest public srcTransceiver;
+    WormholeGuardiansAdapterForTest public srcAdapter;
     MockWormhole destWormhole;
-    WormholeTransceiverForTest public destTransceiver;
+    WormholeGuardiansAdapterForTest public destAdapter;
     uint8 consistencyLevel = 200;
 
     uint16 ourChain = 42;
@@ -172,102 +172,104 @@ contract WormholeTransceiverTest is Test {
     uint16 peerChain3 = 3;
 
     function setUp() public {
-        srcRouter = new MockRouter(srcChain);
-        routerAddr = address(srcRouter);
-        destRouter = new MockRouter(destChain);
+        srcEndpoint = new MockEndpoint(srcChain);
+        endpointAddr = address(srcEndpoint);
+        destEndpoint = new MockEndpoint(destChain);
         srcWormhole = new MockWormhole(srcChain);
-        srcTransceiver =
-            new WormholeTransceiverForTest(srcChain, admin, routerAddr, address(srcWormhole), consistencyLevel);
+        srcAdapter =
+            new WormholeGuardiansAdapterForTest(srcChain, admin, endpointAddr, address(srcWormhole), consistencyLevel);
         destWormhole = new MockWormhole(destChain);
-        destTransceiver = new WormholeTransceiverForTest(
-            destChain, admin, address(destRouter), address(destWormhole), consistencyLevel
+        destAdapter = new WormholeGuardiansAdapterForTest(
+            destChain, admin, address(destEndpoint), address(destWormhole), consistencyLevel
         );
 
         // Give everyone some money to play with.
         vm.deal(integratorAddr, 1 ether);
-        vm.deal(routerAddr, 1 ether);
+        vm.deal(endpointAddr, 1 ether);
         vm.deal(userA, 1 ether);
         vm.deal(someoneElse, 1 ether);
     }
 
     function test_init() public view {
-        require(srcTransceiver.ourChain() == ourChain, "ourChain is not right");
-        require(srcTransceiver.admin() == admin, "admin is not right");
-        require(address(srcTransceiver.router()) == routerAddr, "srcRouter is not right");
-        require(address(srcTransceiver.wormhole()) == address(srcWormhole), "srcWormhole is not right");
-        require(srcTransceiver.consistencyLevel() == consistencyLevel, "consistencyLevel is not right");
+        require(srcAdapter.ourChain() == ourChain, "ourChain is not right");
+        require(srcAdapter.admin() == admin, "admin is not right");
+        require(address(srcAdapter.endpoint()) == endpointAddr, "srcEndpoint is not right");
+        require(address(srcAdapter.wormhole()) == address(srcWormhole), "srcWormhole is not right");
+        require(srcAdapter.consistencyLevel() == consistencyLevel, "consistencyLevel is not right");
     }
 
     function test_invalidInit() public {
         // ourChain can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(0, admin, address(destRouter), address(destWormhole), consistencyLevel);
+        new WormholeGuardiansAdapter(0, admin, address(destEndpoint), address(destWormhole), consistencyLevel);
 
         // admin can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(destChain, address(0), address(destRouter), address(destWormhole), consistencyLevel);
+        new WormholeGuardiansAdapter(
+            destChain, address(0), address(destEndpoint), address(destWormhole), consistencyLevel
+        );
 
-        // router can't be zero.
+        // endpoint can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(destChain, admin, address(0), address(destWormhole), consistencyLevel);
+        new WormholeGuardiansAdapter(destChain, admin, address(0), address(destWormhole), consistencyLevel);
 
         // wormhole can't be zero.
         vm.expectRevert();
-        new WormholeTransceiver(destChain, admin, address(destRouter), address(0), consistencyLevel);
+        new WormholeGuardiansAdapter(destChain, admin, address(destEndpoint), address(0), consistencyLevel);
     }
 
     function test_updateAdmin() public {
         // Only the admin can initiate this call.
         vm.startPrank(userA);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.CallerNotAdmin.selector, userA));
-        srcTransceiver.updateAdmin(someoneElse);
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.CallerNotAdmin.selector, userA));
+        srcAdapter.updateAdmin(someoneElse);
 
         // Can't set the admin to zero.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidAdminZeroAddress.selector));
-        srcTransceiver.updateAdmin(address(0));
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidAdminZeroAddress.selector));
+        srcAdapter.updateAdmin(address(0));
 
         // This should work.
         vm.startPrank(admin);
-        srcTransceiver.updateAdmin(userA);
+        srcAdapter.updateAdmin(userA);
     }
 
     function test_transferAdmin() public {
         // Set up to do a receive below.
         vm.startPrank(admin);
-        destTransceiver.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcTransceiver)).toBytes32());
+        destAdapter.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcAdapter)).toBytes32());
 
         // Only the admin can initiate this call.
         vm.startPrank(userA);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.CallerNotAdmin.selector, userA));
-        srcTransceiver.transferAdmin(someoneElse);
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.CallerNotAdmin.selector, userA));
+        srcAdapter.transferAdmin(someoneElse);
 
         // Transferring to address zero should revert.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidAdminZeroAddress.selector));
-        srcTransceiver.transferAdmin(address(0));
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidAdminZeroAddress.selector));
+        srcAdapter.transferAdmin(address(0));
 
         // This should work.
         vm.startPrank(admin);
-        srcTransceiver.transferAdmin(userA);
+        srcAdapter.transferAdmin(userA);
 
         // Attempting to do another transfer when one is in progress should revert.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.AdminTransferPending.selector));
-        srcTransceiver.transferAdmin(someoneElse);
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.AdminTransferPending.selector));
+        srcAdapter.transferAdmin(someoneElse);
 
         // Attempting to update when a transfer is in progress should revert.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.AdminTransferPending.selector));
-        srcTransceiver.updateAdmin(someoneElse);
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.AdminTransferPending.selector));
+        srcAdapter.updateAdmin(someoneElse);
 
         // Attempting to set a peer when a transfer is in progress should revert.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.AdminTransferPending.selector));
-        srcTransceiver.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.AdminTransferPending.selector));
+        srcAdapter.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
 
         // But you can quote the delivery price while a transfer is pending.
-        srcTransceiver.quoteDeliveryPrice(peerChain1);
+        srcAdapter.quoteDeliveryPrice(peerChain1);
 
         // And you can send a message while a transfer is pending.
         UniversalAddress srcAddr = UniversalAddressLibrary.fromAddress(address(userA));
@@ -278,110 +280,112 @@ contract WormholeTransceiverTest is Test {
         address refundAddr = userA;
         uint256 deliverPrice = 382;
 
-        vm.startPrank(routerAddr);
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        vm.startPrank(endpointAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
 
         // And you can receive a message while a transfer is pending.
-        destTransceiver.receiveMessage(srcWormhole.lastVaa());
+        destAdapter.receiveMessage(srcWormhole.lastVaa());
     }
 
     function test_claimAdmin() public {
         // Can't claim when a transfer is not pending.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.NoAdminUpdatePending.selector));
-        srcTransceiver.claimAdmin();
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.NoAdminUpdatePending.selector));
+        srcAdapter.claimAdmin();
 
         // Start a transfer.
-        srcTransceiver.transferAdmin(userA);
+        srcAdapter.transferAdmin(userA);
 
         // If someone other than the current or pending admin tries to claim, it should revert.
         vm.startPrank(someoneElse);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.CallerNotAdmin.selector, someoneElse));
-        srcTransceiver.claimAdmin();
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.CallerNotAdmin.selector, someoneElse));
+        srcAdapter.claimAdmin();
 
         // The admin claiming should cancel the transfer.
         vm.startPrank(admin);
-        srcTransceiver.claimAdmin();
-        require(srcTransceiver.admin() == admin, "cancel set the admin incorrectly");
-        require(srcTransceiver.pendingAdmin() == address(0), "cancel did not clear the pending admin");
+        srcAdapter.claimAdmin();
+        require(srcAdapter.admin() == admin, "cancel set the admin incorrectly");
+        require(srcAdapter.pendingAdmin() == address(0), "cancel did not clear the pending admin");
 
         // The new admin claiming it should work.
-        srcTransceiver.transferAdmin(userA);
+        srcAdapter.transferAdmin(userA);
         vm.startPrank(userA);
-        srcTransceiver.claimAdmin();
-        require(srcTransceiver.admin() == userA, "transfer set the admin incorrectly");
-        require(srcTransceiver.pendingAdmin() == address(0), "transfer did not clear the pending admin");
+        srcAdapter.claimAdmin();
+        require(srcAdapter.admin() == userA, "transfer set the admin incorrectly");
+        require(srcAdapter.pendingAdmin() == address(0), "transfer did not clear the pending admin");
     }
 
     function test_discardAdmin() public {
         // Only the admin can initiate this call.
         vm.startPrank(userA);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.CallerNotAdmin.selector, userA));
-        srcTransceiver.discardAdmin();
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.CallerNotAdmin.selector, userA));
+        srcAdapter.discardAdmin();
 
         // This should work.
         vm.startPrank(admin);
-        srcTransceiver.discardAdmin();
-        require(srcTransceiver.admin() == address(0), "transfer set the admin incorrectly");
-        require(srcTransceiver.pendingAdmin() == address(0), "transfer did not clear the pending admin");
+        srcAdapter.discardAdmin();
+        require(srcAdapter.admin() == address(0), "transfer set the admin incorrectly");
+        require(srcAdapter.pendingAdmin() == address(0), "transfer did not clear the pending admin");
 
         // So now the old admin can't do anything.
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.CallerNotAdmin.selector, admin));
-        srcTransceiver.updateAdmin(someoneElse);
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.CallerNotAdmin.selector, admin));
+        srcAdapter.updateAdmin(someoneElse);
     }
 
     function test_setPeer() public {
         // Only the admin can set a peer.
         vm.startPrank(someoneElse);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.CallerNotAdmin.selector, someoneElse));
-        srcTransceiver.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.CallerNotAdmin.selector, someoneElse));
+        srcAdapter.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
 
         // Peer chain can't be zero.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidChain.selector, 0));
-        srcTransceiver.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidChain.selector, 0));
+        srcAdapter.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
 
         // Peer contract can't be zero.
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidPeerZeroAddress.selector));
-        srcTransceiver.setPeer(peerChain1, UniversalAddressLibrary.fromAddress(address(0)).toBytes32());
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidPeerZeroAddress.selector));
+        srcAdapter.setPeer(peerChain1, UniversalAddressLibrary.fromAddress(address(0)).toBytes32());
 
         // This should work.
-        srcTransceiver.setPeer(peerChain1, UniversalAddressLibrary.fromAddress(address(peerAddress1)).toBytes32());
+        srcAdapter.setPeer(peerChain1, UniversalAddressLibrary.fromAddress(address(peerAddress1)).toBytes32());
 
         // You can't set a peer when it's already set.
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.PeerAlreadySet.selector, peerChain1, peerAddress1));
-        srcTransceiver.setPeer(peerChain1, UniversalAddressLibrary.fromAddress(address(peerAddress2)).toBytes32());
+        vm.expectRevert(
+            abi.encodeWithSelector(IWormholeGuardiansAdapter.PeerAlreadySet.selector, peerChain1, peerAddress1)
+        );
+        srcAdapter.setPeer(peerChain1, UniversalAddressLibrary.fromAddress(address(peerAddress2)).toBytes32());
 
         // But you can set the peer for another chain.
-        srcTransceiver.setPeer(peerChain2, UniversalAddressLibrary.fromAddress(address(peerAddress2)).toBytes32());
+        srcAdapter.setPeer(peerChain2, UniversalAddressLibrary.fromAddress(address(peerAddress2)).toBytes32());
 
         // Test the getter.
         require(
-            srcTransceiver.getPeer(peerChain1) == UniversalAddressLibrary.fromAddress(address(peerAddress1)).toBytes32(),
+            srcAdapter.getPeer(peerChain1) == UniversalAddressLibrary.fromAddress(address(peerAddress1)).toBytes32(),
             "Peer for chain one is wrong"
         );
         require(
-            srcTransceiver.getPeer(peerChain2) == UniversalAddressLibrary.fromAddress(address(peerAddress2)).toBytes32(),
+            srcAdapter.getPeer(peerChain2) == UniversalAddressLibrary.fromAddress(address(peerAddress2)).toBytes32(),
             "Peer for chain two is wrong"
         );
 
         // If you get a peer for a chain that's not set, it returns zero.
         require(
-            srcTransceiver.getPeer(peerChain3) == UniversalAddressLibrary.fromAddress(address(0)).toBytes32(),
+            srcAdapter.getPeer(peerChain3) == UniversalAddressLibrary.fromAddress(address(0)).toBytes32(),
             "Peer for chain three should not be set"
         );
     }
 
-    function test_getTransceiverType() public view {
+    function test_getAdapterType() public view {
         require(
-            keccak256(abi.encodePacked(srcTransceiver.getTransceiverType()))
-                == keccak256(abi.encodePacked(srcTransceiver.versionString())),
-            "srcTransceiver type mismatch"
+            keccak256(abi.encodePacked(srcAdapter.getAdapterType()))
+                == keccak256(abi.encodePacked(srcAdapter.versionString())),
+            "srcAdapter type mismatch"
         );
     }
 
     function test_quoteDeliveryPrice() public view {
-        require(srcTransceiver.quoteDeliveryPrice(peerChain1) == srcWormhole.fixedMessageFee(), "message fee is wrong");
+        require(srcAdapter.quoteDeliveryPrice(peerChain1) == srcWormhole.fixedMessageFee(), "message fee is wrong");
     }
 
     function test_sendMessage() public {
@@ -393,30 +397,30 @@ contract WormholeTransceiverTest is Test {
         address refundAddr = userA;
         uint256 deliverPrice = 382;
 
-        vm.startPrank(routerAddr);
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        vm.startPrank(endpointAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
 
         require(srcWormhole.messagesSent() == 1, "Message count is wrong");
         require(srcWormhole.lastNonce() == 0, "Nonce is wrong");
         require(srcWormhole.lastConsistencyLevel() == consistencyLevel, "Consistency level is wrong");
         require(srcWormhole.lastDeliveryPrice() == deliverPrice, "Deliver price is wrong");
 
-        bytes memory expectedPayload = srcTransceiver.encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        bytes memory expectedPayload = srcAdapter.encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
         require(
             keccak256(abi.encodePacked(srcWormhole.lastPayload())) == keccak256(expectedPayload), "Payload is wrong"
         );
 
-        // Only the router can call send message.
+        // Only the endpoint can call send message.
         vm.startPrank(someoneElse);
-        vm.expectRevert(abi.encodeWithSelector(ITransceiver.CallerNotRouter.selector, someoneElse));
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        vm.expectRevert(abi.encodeWithSelector(IAdapter.CallerNotEndpoint.selector, someoneElse));
+        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
     }
 
     function test_receiveMessage() public {
-        // Set the peers on the transceivers.
+        // Set the peers on the adapters.
         vm.startPrank(admin);
-        srcTransceiver.setPeer(destChain, UniversalAddressLibrary.fromAddress(address(destTransceiver)).toBytes32());
-        destTransceiver.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcTransceiver)).toBytes32());
+        srcAdapter.setPeer(destChain, UniversalAddressLibrary.fromAddress(address(destAdapter)).toBytes32());
+        destAdapter.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcAdapter)).toBytes32());
 
         UniversalAddress srcAddr = UniversalAddressLibrary.fromAddress(address(userA));
         uint16 dstChain = destChain;
@@ -426,48 +430,48 @@ contract WormholeTransceiverTest is Test {
         address refundAddr = userA;
         uint256 deliverPrice = 382;
 
-        vm.startPrank(routerAddr);
-        srcTransceiver.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        vm.startPrank(endpointAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
         bytes memory vaa = srcWormhole.lastVaa();
 
         // This should work.
-        destTransceiver.receiveMessage(vaa);
+        destAdapter.receiveMessage(vaa);
 
-        require(destRouter.lastSourceChain() == srcChain, "srcChain is wrong");
-        require(destRouter.lastSourceAddress() == srcAddr, "srcAddr is wrong");
-        require(destRouter.lastSequence() == sequence, "sequence is wrong");
-        require(destRouter.lastDestinationChain() == dstChain, "dstChain is wrong");
-        require(destRouter.lastDestinationAddress() == dstAddr, "dstAddr is wrong");
-        require(destRouter.lastPayloadHash() == payloadHash, "payloadHash is wrong");
+        require(destEndpoint.lastSourceChain() == srcChain, "srcChain is wrong");
+        require(destEndpoint.lastSourceAddress() == srcAddr, "srcAddr is wrong");
+        require(destEndpoint.lastSequence() == sequence, "sequence is wrong");
+        require(destEndpoint.lastDestinationChain() == dstChain, "dstChain is wrong");
+        require(destEndpoint.lastDestinationAddress() == dstAddr, "dstAddr is wrong");
+        require(destEndpoint.lastPayloadHash() == payloadHash, "payloadHash is wrong");
 
-        // Can't post it to the wrong transceiver.
+        // Can't post it to the wrong adapter.
         vm.expectRevert(
-            abi.encodeWithSelector(IWormholeTransceiver.InvalidPeer.selector, srcChain, address(srcTransceiver))
+            abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidPeer.selector, srcChain, address(srcAdapter))
         );
-        srcTransceiver.receiveMessage(vaa);
+        srcAdapter.receiveMessage(vaa);
 
         // An invalid VAA should revert.
         destWormhole.setValidFlag(false, "This is bad!");
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidVaa.selector, "This is bad!"));
-        destTransceiver.receiveMessage(vaa);
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidVaa.selector, "This is bad!"));
+        destAdapter.receiveMessage(vaa);
         destWormhole.setValidFlag(true, "");
 
-        // The transceiver should not block a message with the wrong dest chain because the router does that.
+        // The adapter should not block a message with the wrong dest chain because the endpoint does that.
         uint16 diffDestChain = destChain + 1;
-        WormholeTransceiverForTest destTransceiver2 = new WormholeTransceiverForTest(
-            diffDestChain, admin, address(destRouter), address(destWormhole), consistencyLevel
+        WormholeGuardiansAdapterForTest destAdapter2 = new WormholeGuardiansAdapterForTest(
+            diffDestChain, admin, address(destEndpoint), address(destWormhole), consistencyLevel
         );
         vm.startPrank(admin);
-        destTransceiver2.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcTransceiver)).toBytes32());
+        destAdapter2.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcAdapter)).toBytes32());
         vm.startPrank(integratorAddr);
-        destTransceiver2.receiveMessage(vaa);
+        destAdapter2.receiveMessage(vaa);
 
-        require(destRouter.lastSourceChain() == srcChain, "srcChain is wrong 2");
-        require(destRouter.lastSourceAddress() == srcAddr, "srcAddr is wrong 2");
-        require(destRouter.lastSequence() == sequence, "sequence is wrong 2");
-        require(destRouter.lastDestinationChain() == dstChain, "dstChain in vaa is wrong");
-        require(destRouter.lastDestinationAddress() == dstAddr, "dstAddr is wrong 2");
-        require(destRouter.lastPayloadHash() == payloadHash, "payloadHash is wrong 2");
+        require(destEndpoint.lastSourceChain() == srcChain, "srcChain is wrong 2");
+        require(destEndpoint.lastSourceAddress() == srcAddr, "srcAddr is wrong 2");
+        require(destEndpoint.lastSequence() == sequence, "sequence is wrong 2");
+        require(destEndpoint.lastDestinationChain() == dstChain, "dstChain in vaa is wrong");
+        require(destEndpoint.lastDestinationAddress() == dstAddr, "dstAddr is wrong 2");
+        require(destEndpoint.lastPayloadHash() == payloadHash, "payloadHash is wrong 2");
     }
 
     function test_encodeDecode() public {
@@ -477,10 +481,9 @@ contract WormholeTransceiverTest is Test {
         UniversalAddress dstAddr = UniversalAddressLibrary.fromAddress(address(peerAddress1));
         bytes32 payloadHash = keccak256("message one");
 
-        bytes memory payload = srcTransceiver.encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        bytes memory payload = srcAdapter.encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
 
-        (UniversalAddress sa, uint64 sn, uint16 rc, UniversalAddress ra, bytes32 ph) =
-            srcTransceiver.decodePayload(payload);
+        (UniversalAddress sa, uint64 sn, uint16 rc, UniversalAddress ra, bytes32 ph) = srcAdapter.decodePayload(payload);
 
         require(sa == srcAddr, "srcAddr is wrong");
         require(sn == sequence, "sequence is wrong");
@@ -492,31 +495,31 @@ contract WormholeTransceiverTest is Test {
         bytes memory shortPayload =
             hex"0000000000000000000000000000000000000000000000000000000000abcdec000000000000002a002a";
         vm.expectRevert(abi.encodeWithSelector(BytesParsing.OutOfBounds.selector, 74, 42));
-        (sa, sn, rc, ra, ph) = srcTransceiver.decodePayload(shortPayload);
+        (sa, sn, rc, ra, ph) = srcAdapter.decodePayload(shortPayload);
 
         // Decoding something too long should revert.
         bytes memory longPayload =
             hex"0000000000000000000000000000000000000000000000000000000000abcdec000000000000002a002a000000000000000000000000000000000000000000000000000000000012345687132a1dbfd52f44b829ebbfa86d87ecb427cb98320c7edd7a2a0f25b6b58a3500";
-        vm.expectRevert(abi.encodeWithSelector(IWormholeTransceiver.InvalidPayloadLength.selector, 107, 106));
-        (sa, sn, rc, ra, ph) = srcTransceiver.decodePayload(longPayload);
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidPayloadLength.selector, 107, 106));
+        (sa, sn, rc, ra, ph) = srcAdapter.decodePayload(longPayload);
     }
 
     function test_getPeers() public {
         vm.startPrank(admin);
 
-        require(0 == srcTransceiver.getPeers().length, "Initial peers should be zero");
+        require(0 == srcAdapter.getPeers().length, "Initial peers should be zero");
 
         bytes32 peerAddr1 = UniversalAddressLibrary.fromAddress(address(peerAddress1)).toBytes32();
         bytes32 peerAddr2 = UniversalAddressLibrary.fromAddress(address(peerAddress2)).toBytes32();
 
-        srcTransceiver.setPeer(peerChain1, peerAddr1);
-        IWormholeTransceiver.PeerEntry[] memory peers = srcTransceiver.getPeers();
+        srcAdapter.setPeer(peerChain1, peerAddr1);
+        IWormholeGuardiansAdapter.PeerEntry[] memory peers = srcAdapter.getPeers();
         require(1 == peers.length, "Should be one peer");
         require(peers[0].chain == peerChain1, "Chain is wrong");
         require(peers[0].addr == peerAddr1, "Address is wrong");
 
-        srcTransceiver.setPeer(peerChain2, peerAddr1);
-        peers = srcTransceiver.getPeers();
+        srcAdapter.setPeer(peerChain2, peerAddr1);
+        peers = srcAdapter.getPeers();
         require(2 == peers.length, "Should be one peer");
         require(peers[0].chain == peerChain1, "First chain is wrong");
         require(peers[0].addr == peerAddr1, "First address is wrong");
@@ -525,7 +528,7 @@ contract WormholeTransceiverTest is Test {
     }
 
     // function testFuzz_SetNumber(uint256 x) public {
-    //     srcTransceiver.setNumber(x);
-    //     assertEq(srcTransceiver.number(), x);
+    //     srcAdapter.setNumber(x);
+    //     assertEq(srcAdapter.number(), x);
     // }
 }
