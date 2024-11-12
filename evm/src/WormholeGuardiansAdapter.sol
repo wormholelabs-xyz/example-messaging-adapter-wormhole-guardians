@@ -1,48 +1,48 @@
 // SPDX-License-Identifier: Apache 2
 pragma solidity ^0.8.19;
 
-import "example-gmp-router/interfaces/IRouterTransceiver.sol";
+import "example-messaging-endpoint/evm/src/interfaces/IEndpointAdapter.sol";
 
 import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
 
-import "./interfaces/IWormholeTransceiver.sol";
+import "./interfaces/IWormholeGuardiansAdapter.sol";
 
-string constant wormholeTransceiverVersionString = "WormholeTransceiver-0.0.1";
+string constant wormholeGuardiansAdapterVersionString = "WormholeGuardiansAdapter-0.0.1";
 
-contract WormholeTransceiver is IWormholeTransceiver {
+contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
     using BytesParsing for bytes; // Used by _decodePayload
 
-    string public constant versionString = wormholeTransceiverVersionString;
+    string public constant versionString = wormholeGuardiansAdapterVersionString;
     address public admin;
     address public pendingAdmin;
 
     // ==================== Immutables ===============================================
 
     uint16 public immutable ourChain;
-    IRouterTransceiver public immutable router;
+    IEndpointAdapter public immutable endpoint;
     IWormhole public immutable wormhole;
     uint8 public immutable consistencyLevel;
 
     // ==================== Constructor ==============================================
 
-    constructor(uint16 _ourChain, address _admin, address _router, address _wormhole, uint8 _consistencyLevel) {
+    constructor(uint16 _ourChain, address _admin, address _endpoint, address _wormhole, uint8 _consistencyLevel) {
         assert(_ourChain != 0);
         assert(_admin != address(0));
-        assert(_router != address(0));
+        assert(_endpoint != address(0));
         assert(_wormhole != address(0));
         // Not checking consistency level since maybe zero is valid?
         ourChain = _ourChain;
         admin = _admin;
-        router = IRouterTransceiver(_router);
+        endpoint = IEndpointAdapter(_endpoint);
         wormhole = IWormhole(_wormhole);
         consistencyLevel = _consistencyLevel;
     }
 
     // =============== Storage Keys =============================================
 
-    bytes32 private constant WORMHOLE_PEERS_SLOT = bytes32(uint256(keccak256("whTransceiver.peers")) - 1);
-    bytes32 private constant CHAINS_SLOT = bytes32(uint256(keccak256("whTransceiver.chains")) - 1);
+    bytes32 private constant WORMHOLE_PEERS_SLOT = bytes32(uint256(keccak256("whAdapter.peers")) - 1);
+    bytes32 private constant CHAINS_SLOT = bytes32(uint256(keccak256("whAdapter.chains")) - 1);
 
     // =============== Storage Accessors ========================================
 
@@ -62,12 +62,12 @@ contract WormholeTransceiver is IWormholeTransceiver {
 
     // =============== Public Getters ======================================================
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function getPeer(uint16 chainId) public view returns (bytes32) {
         return _getPeersStorage()[chainId];
     }
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function getPeers() public view returns (PeerEntry[] memory results) {
         uint16[] storage chains = _getChainsStorage();
         uint256 len = chains.length;
@@ -83,7 +83,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
 
     // =============== Admin ===============================================================
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function updateAdmin(address newAdmin) external onlyAdmin {
         // SPEC: MUST check that the caller is the current admin and there is not a pending transfer.
         // - This is handled by onlyAdmin.
@@ -98,7 +98,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
         emit AdminUpdated(msg.sender, newAdmin);
     }
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function transferAdmin(address newAdmin) external onlyAdmin {
         // SPEC: MUST check that the caller is the current admin and there is not a pending transfer.
         // - This is handled by onlyAdmin.
@@ -113,7 +113,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
         emit AdminUpdateRequested(msg.sender, newAdmin);
     }
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function claimAdmin() external {
         // This doesn't use onlyAdmin because the pending admin must be non-zero.
 
@@ -134,7 +134,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
         emit AdminUpdated(oldAdmin, msg.sender);
     }
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function discardAdmin() external onlyAdmin {
         // SPEC: MUST check that the caller is the current admin and there is not a pending transfer.
         // - This is handled by onlyAdmin.
@@ -144,7 +144,7 @@ contract WormholeTransceiver is IWormholeTransceiver {
         emit AdminDiscarded(msg.sender);
     }
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function setPeer(uint16 peerChain, bytes32 peerContract) external onlyAdmin {
         if (peerChain == 0) {
             revert InvalidChain(peerChain);
@@ -167,17 +167,17 @@ contract WormholeTransceiver is IWormholeTransceiver {
 
     // =============== Interface ===============================================================
 
-    /// @inheritdoc ITransceiver
-    function getTransceiverType() external pure returns (string memory) {
+    /// @inheritdoc IAdapter
+    function getAdapterType() external pure returns (string memory) {
         return versionString;
     }
 
-    /// @inheritdoc ITransceiver
+    /// @inheritdoc IAdapter
     function quoteDeliveryPrice(uint16 /*dstChain*/ ) external view returns (uint256) {
         return wormhole.messageFee();
     }
 
-    /// @inheritdoc ITransceiver
+    /// @inheritdoc IAdapter
     /// @dev The caller should set the delivery price in msg.value.
     function sendMessage(
         UniversalAddress srcAddr,
@@ -186,13 +186,13 @@ contract WormholeTransceiver is IWormholeTransceiver {
         UniversalAddress dstAddr,
         bytes32 payloadHash,
         address // refundAddr
-    ) external payable onlyRouter {
+    ) external payable onlyEndpoint {
         bytes memory payload = _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
         wormhole.publishMessage{value: msg.value}(0, payload, consistencyLevel);
         emit MessageSent(srcAddr, dstChain, dstAddr, sequence, payloadHash);
     }
 
-    /// @inheritdoc IWormholeTransceiver
+    /// @inheritdoc IWormholeGuardiansAdapter
     function receiveMessage(bytes calldata encodedMessage) external {
         // Verify the wormhole message and extract the source chain and payload.
         (uint16 srcChain, bytes memory payload) = _verifyMessage(encodedMessage);
@@ -201,10 +201,10 @@ contract WormholeTransceiver is IWormholeTransceiver {
         (UniversalAddress srcAddr, uint64 sequence, uint16 dstChain, UniversalAddress dstAddr, bytes32 payloadHash) =
             _decodePayload(payload);
 
-        // Not validating that the dest chain is our chain because the router does that.
+        // Not validating that the dest chain is our chain because the endpoint does that.
 
-        // Post the message to the router.
-        router.attestMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        // Post the message to the endpoint.
+        endpoint.attestMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
 
         // We don't need to emit an event here because _verifyMessage already did.
     }
@@ -283,9 +283,9 @@ contract WormholeTransceiver is IWormholeTransceiver {
         _;
     }
 
-    modifier onlyRouter() {
-        if (address(router) != msg.sender) {
-            revert CallerNotRouter(msg.sender);
+    modifier onlyEndpoint() {
+        if (address(endpoint) != msg.sender) {
+            revert CallerNotEndpoint(msg.sender);
         }
         _;
     }

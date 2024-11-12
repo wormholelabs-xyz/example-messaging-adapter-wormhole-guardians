@@ -2,9 +2,9 @@
 
 ## Overview
 
-This implementation provides a reference implementation of a transceiver that allows the GMP router to communicate over Wormhole.
+This implementation provides a reference implementation of an adapter that allows the Modular Messaging endpoint to communicate over Wormhole.
 
-A transceiver MUST implement the `ITransceiver` interface defined in the GMP repo.
+An adapter MUST implement the `IAdapter` interface defined in the Modular Messaging repo.
 
 ## Runtime Support
 

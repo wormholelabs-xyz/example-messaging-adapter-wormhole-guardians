@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #
-# This script deploys the WormholeTransceiver contract.
-# Usage: RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ROUTER= WORMHOLE= CONSISTENCY_LEVEL= ./sh/deployWormholeTransceiver.sh
-#  tilt: ROUTER=0x1aBE68277AE236083947f2551FEe8b885efCA8f5 ./sh/deployWormholeTransceiver.sh
+# This script deploys the WormholeGuardiansAdapter contract.
+# Usage: RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ENDPOINT= WORMHOLE= CONSISTENCY_LEVEL= ./sh/deployWormholeGuardiansAdapter.sh
+#  tilt: ENDPOINT=0x1aBE68277AE236083947f2551FEe8b885efCA8f5 ./sh/deployWormholeGuardiansAdapter.sh
 #
 
-[[ -z $ROUTER ]] && { echo "Missing ROUTER"; exit 1; }
+[[ -z $ENDPOINT ]] && { echo "Missing ENDPOINT"; exit 1; }
 
 if [ "${RPC_URL}X" == "X" ]; then
   RPC_URL=http://localhost:8545
@@ -36,13 +36,13 @@ if [ "${CONSISTENCY_LEVEL}X" == "X" ]; then
   CONSISTENCY_LEVEL=200
 fi
 
-forge script ./script/DeployWormholeTransceiver.s.sol:DeployWormholeTransceiver \
-	--sig "run(uint16,address,address,address,uint8)" $OUR_CHAIN_ID $ADMIN $ROUTER $WORMHOLE $CONSISTENCY_LEVEL \
+forge script ./script/DeployWormholeGuardiansAdapter.s.sol:DeployWormholeGuardiansAdapter \
+	--sig "run(uint16,address,address,address,uint8)" $OUR_CHAIN_ID $ADMIN $ENDPOINT $WORMHOLE $CONSISTENCY_LEVEL \
 	--rpc-url "$RPC_URL" \
 	--private-key "$MNEMONIC" \
 	--broadcast ${FORGE_ARGS}
 
-returnInfo=$(cat ./broadcast/DeployWormholeTransceiver.s.sol/$EVM_CHAIN_ID/run-latest.json)
+returnInfo=$(cat ./broadcast/DeployWormholeGuardiansAdapter.s.sol/$EVM_CHAIN_ID/run-latest.json)
 
 DEPLOYED_ADDRESS=$(jq -r '.returns.deployedAddress.value' <<< "$returnInfo")
-echo "Deployed transceiver address: $DEPLOYED_ADDRESS"
+echo "Deployed adapter address: $DEPLOYED_ADDRESS"
