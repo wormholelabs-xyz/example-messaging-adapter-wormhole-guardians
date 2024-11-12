@@ -80,7 +80,7 @@ The payload of the Wormhole messages consists of the following fields encoded us
 The contract can be deployed using the following command.
 
 ```shell
-evm$ RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ROUTER= WORMHOLE= CONSISTENCY_LEVEL= ./sh/deployWormholeGuardiansAdapter.sh
+evm$ RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ENDPOINT= WORMHOLE= CONSISTENCY_LEVEL= ./sh/deployWormholeGuardiansAdapter.sh
 ```
 
 Note that the deploy script uses `create2` to generate a deterministic contract address.
