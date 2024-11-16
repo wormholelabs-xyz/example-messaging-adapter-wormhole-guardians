@@ -7,7 +7,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-svm = "Gfo1Jn4zHvc8BBGWNPQpNDZob5DsG2bhmS4wEA2GKFx6"
+wormhole_guardian_adapter = "Gfo1Jn4zHvc8BBGWNPQpNDZob5DsG2bhmS4wEA2GKFx6"
 
 [registry]
 url = "https://api.apr.dev"
@@ -16,5 +16,9 @@ url = "https://api.apr.dev"
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
+[[test.genesis]]
+address = "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
+program = "tests/artifacts/endpoint.so"
+
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/svm.ts"
