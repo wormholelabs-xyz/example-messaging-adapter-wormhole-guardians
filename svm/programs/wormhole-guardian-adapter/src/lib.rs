@@ -24,4 +24,16 @@ pub mod wormhole_guardian_adapter {
     pub fn initialize(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         instructions::admin::initialize(ctx, args)
     }
+
+    pub fn transfer_admin(ctx: Context<TransferAdmin>, args: TransferAdminArgs) -> Result<()> {
+        instructions::admin::transfer_admin(ctx, args)
+    }
+
+    pub fn claim_admin(ctx: Context<ClaimAdmin>) -> Result<()> {
+        instructions::admin::claim_admin(ctx)
+    }
+
+    pub fn update_admin(ctx: Context<UpdateAdmin>, args: UpdateAdminArgs) -> Result<()> {
+        instructions::admin::update_admin(ctx, args)
+    }
 }

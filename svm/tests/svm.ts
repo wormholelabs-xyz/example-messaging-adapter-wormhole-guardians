@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
-import { assert, expect, use } from "chai";
+import { assert, expect } from "chai";
 import { Program, web3 } from "@coral-xyz/anchor";
-import { PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
+import { PublicKey, Keypair } from "@solana/web3.js";
 import { WormholeGuardianAdapter } from "../target/types/wormhole_guardian_adapter";
 
 describe("wormhole-guardian-adapter", () => {
@@ -15,8 +15,9 @@ describe("wormhole-guardian-adapter", () => {
   let configPDA: PublicKey;
   let configBump: number;
 
-  // Generate a new keypair for the payer
+  // Generate keypairs for testing
   const payer = Keypair.generate();
+  const newAdmin = Keypair.generate();
 
   before(async () => {
     // Airdrop some SOL to the payer
@@ -58,6 +59,174 @@ describe("wormhole-guardian-adapter", () => {
     expect(config.pendingAdmin).to.be.null;
     expect(config.endpoint.toString()).to.equal(mockEndpoint.toString());
     expect(config.wormholeProgram.toString()).to.equal(mockAdapter.toString());
-    expect(config.consistencyLevel).to.equal(consistencyLevel)
+    expect(config.consistencyLevel).to.equal(consistencyLevel);
+  });
+
+  it("Transfer admin - fails if not admin", async () => {
+    try {
+      await program.methods
+        .transferAdmin({
+          newAdmin: newAdmin.publicKey,
+        })
+        .accounts({
+          admin: newAdmin.publicKey,  // Not the admin
+        })
+        .signers([newAdmin])
+        .rpc();
+
+      assert.fail("Expected transaction to fail");
+    } catch (error) {
+      expect(error.message).to.include("CallerNotAdmin");
+    }
+  });
+
+  it("Transfer admin - success path", async () => {
+    // Transfer admin
+    await program.methods
+      .transferAdmin({
+        newAdmin: newAdmin.publicKey,
+      })
+      .accounts({
+        admin: payer.publicKey,
+      })
+      .signers([payer])
+      .rpc();
+
+    // Verify state after transfer
+    const configAfter = await program.account.config.fetch(configPDA);
+    expect(configAfter.admin.toString()).to.equal(payer.publicKey.toString());
+    expect(configAfter.pendingAdmin?.toString()).to.equal(newAdmin.publicKey.toString());
+  });
+
+
+  it("Transfer admin - fails if transfer already pending", async () => {
+    // Second transfer should fail
+    try {
+      await program.methods
+        .transferAdmin({
+          newAdmin: Keypair.generate().publicKey,
+        })
+        .accounts({
+          admin: payer.publicKey,
+        })
+        .signers([payer])
+        .rpc();
+
+      assert.fail("Expected the transaction to fail with AdminTransferPending");
+    } catch (error: any) {
+      expect(error.error.errorCode.code).to.equal("AdminTransferPending");
+    }
+
+    // Verify state didn't change
+    const configFinal = await program.account.config.fetch(configPDA);
+    expect(configFinal.pendingAdmin?.toString()).to.equal(newAdmin.publicKey.toString());
+  });
+
+
+  it("Update admin - fails if transfer pending", async () => {
+    // Try to update while transfer is pending
+    const newerAdmin = Keypair.generate();
+    try {
+      await program.methods
+        .updateAdmin({
+          newAdmin: newerAdmin.publicKey,
+        })
+        .accounts({
+          admin: payer.publicKey,
+        })
+        .signers([payer])
+        .rpc();
+
+      assert.fail("Expected transaction to fail");
+    } catch (error) {
+      expect(error.message).to.include("AdminTransferPending");
+    }
+  });
+
+  it("Claim admin - fails if wrong pending admin", async () => {
+    // Try to claim with wrong account
+    const wrongClaimer = Keypair.generate();
+    try {
+      await program.methods
+        .claimAdmin()
+        .accounts({
+          newAdmin: wrongClaimer.publicKey,
+        })
+        .signers([wrongClaimer])
+        .rpc();
+
+      assert.fail("Expected transaction to fail");
+    } catch (error) {
+      expect(error.message).to.include("CallerNotAdmin");
+    }
+  });
+
+  it("Claim admin - success path", async () => {
+    // Claim admin
+    await program.methods
+      .claimAdmin()
+      .accounts({
+        newAdmin: newAdmin.publicKey,
+      })
+      .signers([newAdmin])
+      .rpc();
+
+    // Verify state after claim
+    const configAfter = await program.account.config.fetch(configPDA);
+    expect(configAfter.admin.toString()).to.equal(newAdmin.publicKey.toString());
+    expect(configAfter.pendingAdmin).to.be.null;
+  });
+
+  it("Claim admin - fails if no transfer pending", async () => {
+    try {
+      await program.methods
+        .claimAdmin()
+        .accounts({
+          newAdmin: newAdmin.publicKey,
+        })
+        .signers([newAdmin])
+        .rpc();
+
+      assert.fail("Expected transaction to fail");
+    } catch (error) {
+      expect(error.message).to.include("NoAdminUpdatePending");
+    }
+  });
+
+  it("Update admin - fails if not admin", async () => {
+    const newerAdmin = Keypair.generate();
+
+    try {
+      await program.methods
+        .updateAdmin({
+          newAdmin: newerAdmin.publicKey,
+        })
+        .accounts({
+          admin: payer.publicKey,  // Not the admin
+        })
+        .signers([payer])
+        .rpc();
+
+      assert.fail("Expected transaction to fail");
+    } catch (error) {
+      expect(error.message).to.include("CallerNotAdmin");
+    }
+  });
+
+  it("Update admin directly - success path", async () => {
+
+    await program.methods
+      .updateAdmin({
+        newAdmin: payer.publicKey,
+      })
+      .accounts({
+        admin: newAdmin.publicKey,
+      })
+      .signers([newAdmin])
+      .rpc();
+
+    const configAfter = await program.account.config.fetch(configPDA);
+    expect(configAfter.admin.toString()).to.equal(payer.publicKey.toString());
+    expect(configAfter.pendingAdmin).to.be.null;
   });
 });
