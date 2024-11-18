@@ -36,4 +36,8 @@ pub mod wormhole_guardian_adapter {
     pub fn update_admin(ctx: Context<UpdateAdmin>, args: UpdateAdminArgs) -> Result<()> {
         instructions::admin::update_admin(ctx, args)
     }
+
+    pub fn set_peer(ctx: Context<SetPeer>, args: SetPeerArgs) -> Result<()> {
+        instructions::admin::set_peer(ctx, args)
+    }
 }

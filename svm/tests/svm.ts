@@ -19,6 +19,50 @@ describe("wormhole-guardian-adapter", () => {
   const payer = Keypair.generate();
   const newAdmin = Keypair.generate();
 
+  // Helper functions
+  const getPeerPDA = (chainId: number): PublicKey => {
+    const chainBuffer = Buffer.alloc(2);
+    chainBuffer.writeUInt16BE(chainId);
+    const [peerPDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from("peer"), chainBuffer],
+      program.programId
+    );
+    return peerPDA;
+  };
+
+  const setPeer = async (
+    chainId: number,
+    contract: number[] | Uint8Array,
+    signer: Keypair
+  ) => {
+    return program.methods
+      .setPeer({
+        peerChain: chainId,
+        peerContract: [...contract],
+      })
+      .accounts({
+        payer: signer.publicKey,
+        admin: signer.publicKey,
+      })
+      .accountsPartial({
+        peer: getPeerPDA(chainId),
+      })
+      .signers([signer])
+      .rpc();
+  };
+
+  const expectTransactionToFail = async (
+    promise: Promise<any>,
+    expectedError: string
+  ) => {
+    try {
+      await promise;
+      assert.fail("Expected transaction to fail");
+    } catch (error) {
+      expect(error.message).to.include(expectedError);
+    }
+  };
+
   before(async () => {
     // Airdrop some SOL to the payer
     const signature = await provider.connection.requestAirdrop(
@@ -229,4 +273,67 @@ describe("wormhole-guardian-adapter", () => {
     expect(configAfter.admin.toString()).to.equal(payer.publicKey.toString());
     expect(configAfter.pendingAdmin).to.be.null;
   });
+
+  describe("setPeer", () => {
+    it("success path", async () => {
+      const peerChain = 2;
+      const peerContract = web3.Keypair.generate().publicKey;
+      const peerPDA = getPeerPDA(peerChain);
+
+      await setPeer(peerChain, peerContract.toBytes(), payer);
+
+      // Verify peer account state
+      const peerAccount = await program.account.peer.fetch(peerPDA);
+      expect(peerAccount.chain).to.equal(peerChain);
+      expect(Buffer.from(peerAccount.contract)).to.deep.equal(peerContract.toBytes());
+    });
+
+    it("fails if already set", async () => {
+      const peerChain = 2;
+      const newContract = web3.Keypair.generate().publicKey;
+
+      await expectTransactionToFail(
+        setPeer(peerChain, newContract.toBytes(), payer),
+        "PeerAlreadySet"
+      );
+    });
+
+    it("fails with zero chain ID", async () => {
+      const peerContract = web3.Keypair.generate().publicKey;
+
+      await expectTransactionToFail(
+        setPeer(0, peerContract.toBytes(), payer),
+        "InvalidChain"
+      );
+    });
+
+    it("fails with zero address contract", async () => {
+      const peerChain = 3;
+      const zeroContract = new Array(32).fill(0);
+
+      await expectTransactionToFail(
+        setPeer(peerChain, zeroContract, payer),
+        "InvalidPeerZeroAddress"
+      );
+    });
+
+    it("fails if not admin", async () => {
+      const peerChain = 4;
+      const peerContract = web3.Keypair.generate().publicKey;
+      const notAdmin = web3.Keypair.generate();
+
+      // Airdrop some SOL to the not-admin account
+      const signature = await provider.connection.requestAirdrop(
+        notAdmin.publicKey,
+        web3.LAMPORTS_PER_SOL
+      );
+      await provider.connection.confirmTransaction(signature);
+
+      await expectTransactionToFail(
+        setPeer(peerChain, peerContract.toBytes(), notAdmin),
+        "CallerNotAdmin"
+      );
+    });
+  });
 });
+

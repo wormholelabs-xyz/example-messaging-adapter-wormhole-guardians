@@ -1,6 +1,6 @@
 use crate::{
     error::WormholeGuardiansAdapterError,
-    event::{AdminUpdateRequested, AdminUpdated},
+    event::{AdminUpdateRequested, AdminUpdated, PeerAdded},
     state::*,
 };
 use anchor_lang::prelude::*;
@@ -139,6 +139,74 @@ pub fn update_admin(ctx: Context<UpdateAdmin>, args: UpdateAdminArgs) -> Result<
     emit_cpi!(AdminUpdated {
         old_admin,
         new_admin: args.new_admin,
+    });
+
+    Ok(())
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct SetPeerArgs {
+    pub peer_chain: u16,
+    pub peer_contract: [u8; 32],
+}
+
+#[event_cpi]
+#[derive(Accounts)]
+#[instruction(args: SetPeerArgs)]
+pub struct SetPeer<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"config"],
+        bump = config.bump,
+        constraint = config.admin == admin.key() @ WormholeGuardiansAdapterError::CallerNotAdmin
+    )]
+    pub config: Account<'info, Config>,
+
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + Peer::INIT_SPACE,
+        seeds = [b"peer", args.peer_chain.to_be_bytes().as_ref()],
+        bump
+    )]
+    pub peer: Account<'info, Peer>,
+
+    pub admin: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+pub fn set_peer(ctx: Context<SetPeer>, args: SetPeerArgs) -> Result<()> {
+    // Validate chain ID is not zero
+    require!(
+        args.peer_chain != 0,
+        WormholeGuardiansAdapterError::InvalidChain
+    );
+
+    // Validate peer contract is not zero address
+    require!(
+        args.peer_contract != [0u8; 32],
+        WormholeGuardiansAdapterError::InvalidPeerZeroAddress
+    );
+
+    // Check if peer is already initialized with a contract
+    require!(
+        ctx.accounts.peer.chain == 0,
+        WormholeGuardiansAdapterError::PeerAlreadySet
+    );
+
+    // Set the peer contract
+    ctx.accounts.peer.set_inner(Peer {
+        bump: ctx.bumps.peer,
+        chain: args.peer_chain,
+        contract: args.peer_contract,
+    });
+
+    emit_cpi!(PeerAdded {
+        chain: args.peer_chain,
+        peer_contract: args.peer_contract,
     });
 
     Ok(())
