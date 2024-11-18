@@ -7,7 +7,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("Gfo1Jn4zHvc8BBGWNPQpNDZob5DsG2bhmS4wEA2GKFx6");
+declare_id!("gWFRjvvXvUnNy64MsywLjXbKoWg1pb4DMLbRZnHuE1m");
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "solana")] {

@@ -2,6 +2,10 @@ import * as anchor from "@coral-xyz/anchor";
 import { assert, expect } from "chai";
 import { Program, web3 } from "@coral-xyz/anchor";
 import { PublicKey, Keypair } from "@solana/web3.js";
+import endpointIDL from "../lib/example-messaging-endpoint/svm/target/idl/endpoint.json";
+import { Endpoint } from "../lib/example-messaging-endpoint/svm/target/types/endpoint";
+import mockIntegratorIdl from "../lib/example-messaging-endpoint/svm/target/idl/mock_integrator.json";
+import { MockIntegrator } from "../lib/example-messaging-endpoint/svm/target/types/mock_integrator";
 import { WormholeGuardianAdapter } from "../target/types/wormhole_guardian_adapter";
 
 describe("wormhole-guardian-adapter", () => {
@@ -10,6 +14,19 @@ describe("wormhole-guardian-adapter", () => {
 
   const program = anchor.workspace
     .WormholeGuardianAdapter as Program<WormholeGuardianAdapter>;
+  console.log("WormholeGuardianAdapter Program ID:", program.programId.toString());
+
+  const endpointProgram = new Program<Endpoint>(
+    { ...endpointIDL as Endpoint, address: "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD" },
+    provider
+  );
+  console.log("Endpoint Program ID:", endpointProgram.programId.toString());
+
+  const integratorProgram = new Program<MockIntegrator>(
+    { ...mockIntegratorIdl, address: "661Ly6gSCDiGWzC4tKJhS8tqXNWJU6yfbhxNKC4gPF5t" } as any,
+    provider
+  );
+  console.log("MockIntegrator Program ID:", integratorProgram.programId.toString());
 
   // Test accounts
   let configPDA: PublicKey;
@@ -298,8 +315,8 @@ describe("wormhole-guardian-adapter", () => {
 
     it("fails if not admin", async () => {
       const peerChain = 4;
-      const peerContract = web3.Keypair.generate().publicKey;
-      const notAdmin = web3.Keypair.generate();
+      const peerContract = Keypair.generate().publicKey;
+      const notAdmin = Keypair.generate();
 
       // Airdrop some SOL to the not-admin account
       const signature = await provider.connection.requestAirdrop(
@@ -314,5 +331,175 @@ describe("wormhole-guardian-adapter", () => {
       );
     });
   });
+
+  const invokeSendMessage = async (
+    signer: Keypair,
+    dstChain: number,
+    dstAddr: number[], // UniversalAddress
+    payloadHash: number[] // 32 bytes
+  ) => {
+    const chainBuffer = Buffer.alloc(2);
+    chainBuffer.writeUInt16BE(dstChain);
+
+    try {
+      // Derive PDAs
+      const [integratorProgramPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("endpoint_integrator")],
+        integratorProgram.programId
+      );
+
+      const [integratorConfig] = PublicKey.findProgramAddressSync(
+        [Buffer.from("integrator_config"), integratorProgram.programId.toBuffer()],
+        endpointProgram.programId
+      );
+
+      const [integratorChainConfig] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("integrator_chain_config"),
+          integratorProgram.programId.toBuffer(),
+          chainBuffer
+        ],
+        endpointProgram.programId
+      );
+
+      const [sequenceTracker] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("sequence_tracker"),
+          integratorProgram.programId.toBuffer()
+        ],
+        endpointProgram.programId
+      );
+
+      const [eventAuthority] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("__event_authority"),
+        ],
+        endpointProgram.programId
+      );
+
+      // Generate a new keypair for outbox message
+      const outboxMessage = Keypair.generate();
+
+      await integratorProgram.methods
+        .invokeRegister({
+          admin: signer.publicKey,
+        })
+        .accounts({
+          payer: signer.publicKey,
+          integratorConfig,
+          sequenceTracker,
+          program: endpointProgram.programId,
+        })
+        .accountsPartial({
+          integratorProgramPda,
+          eventAuthority,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          endpointProgram: endpointProgram.programId,
+        })
+        .signers([signer])
+        .rpc();
+
+      const [adapterInfo] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("adapter_info"),
+          integratorProgram.programId.toBuffer(),
+          program.programId.toBuffer(), // adapter program ID
+        ],
+        endpointProgram.programId
+      );
+
+      await endpointProgram.methods
+        .addAdapter({
+          integratorProgramId: integratorProgram.programId,
+          adapterProgramId: program.programId,
+        })
+        .accounts({
+          payer: signer.publicKey,
+          admin: signer.publicKey,
+        })
+        .accountsPartial({
+          integratorConfig,
+          adapterInfo,
+        })
+        .signers([signer])
+        .rpc();
+
+      await endpointProgram.methods
+        .enableSendAdapter({
+          integratorProgramId: integratorProgram.programId,
+          adapterProgramId: program.programId,
+          chainId: 1, // Example chain ID
+        })
+        .accounts({
+          payer: signer.publicKey,
+          admin: signer.publicKey,
+        })
+        .accountsPartial({
+          integratorConfig,
+          integratorChainConfig,
+          adapterInfo,
+        })
+        .signers([signer])
+        .rpc();
+
+      const tx = await integratorProgram.methods
+        .invokeSendMessage({
+          dstChain,
+          dstAddr: { bytes: dstAddr }, // Wrap the bytes array in an object
+          payloadHash
+        })
+        .accounts({
+          payer: signer.publicKey,
+          outboxMessage: outboxMessage.publicKey,
+          sequenceTracker,
+          program: endpointProgram.programId,
+          integratorChainConfig,
+        })
+        .accountsPartial({
+          integratorProgramPda,
+          integratorChainConfig,
+          endpointProgram: endpointProgram.programId,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          eventAuthority,
+        })
+        .signers([signer, outboxMessage])
+        .rpc();
+
+
+      // Fetch and verify the OutboxMessage account
+      const outboxMessageAccount = await endpointProgram.account.outboxMessage.fetch(
+        outboxMessage.publicKey
+      );
+
+      // Verify all fields
+      console.log("OutboxMessage account:", {
+        srcAddr: outboxMessageAccount.srcAddr,
+        sequence: outboxMessageAccount.sequence.toString(),
+        dstChain: outboxMessageAccount.dstChain,
+        dstAddr: outboxMessageAccount.dstAddr,
+        payloadHash: Buffer.from(outboxMessageAccount.payloadHash).toString('hex'),
+        outstandingAdapters: outboxMessageAccount.outstandingAdapters,
+        refundRecipient: outboxMessageAccount.refundRecipient.toString()
+      });
+
+    } catch (e) {
+      console.error("Transaction failed:", e);
+      throw e;
+    }
+  };
+
+  describe("messages", async () => {
+    const signature = await provider.connection.requestAirdrop(
+      payer.publicKey,
+      5 * web3.LAMPORTS_PER_SOL  // Increased to 5 SOL
+    );
+    await provider.connection.confirmTransaction(signature);
+    // Example usage:
+    const dstChain = 1; // example chain ID
+    const dstAddr = Array(32).fill(0); // example 32-byte address
+    const payloadHash = Array(32).fill(0); // example 32-byte hash
+
+    await invokeSendMessage(payer, dstChain, dstAddr, payloadHash);
+  })
 });
 
