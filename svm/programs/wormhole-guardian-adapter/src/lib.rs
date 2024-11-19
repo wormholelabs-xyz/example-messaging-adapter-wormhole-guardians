@@ -40,4 +40,8 @@ pub mod wormhole_guardian_adapter {
     pub fn set_peer(ctx: Context<SetPeer>, args: SetPeerArgs) -> Result<()> {
         instructions::admin::set_peer(ctx, args)
     }
+
+    pub fn pick_up_message(ctx: Context<PickUpMessage>) -> Result<()> {
+        instructions::pick_up_message::pick_up_message(ctx)
+    }
 }

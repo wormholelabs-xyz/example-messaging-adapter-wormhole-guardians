@@ -400,7 +400,7 @@ describe("wormhole-guardian-adapter", () => {
     before(async () => {
       // Setup accounts
       outboxMessage = Keypair.generate();
-      pdas = deriveEndpointPDAs(1); // chainId 1
+      pdas = deriveEndpointPDAs(2); // chainId 2
 
       // Airdrop
       await provider.connection.requestAirdrop(
@@ -449,7 +449,7 @@ describe("wormhole-guardian-adapter", () => {
         .enableSendAdapter({
           integratorProgramId: integratorProgram.programId,
           adapterProgramId: program.programId,
-          chainId: 1,
+          chainId: 2,
         })
         .accounts({
           payer: payer.publicKey,
@@ -468,7 +468,7 @@ describe("wormhole-guardian-adapter", () => {
 
       await integratorProgram.methods
         .invokeSendMessage({
-          dstChain: 1,
+          dstChain: 2,
           dstAddr: { bytes: dstAddr },
           payloadHash
         })
@@ -489,8 +489,32 @@ describe("wormhole-guardian-adapter", () => {
         .rpc();
     });
 
-    it("can receive message", async () => {
+    // All the other tests are done in Endpoint repo since the logic
+    // is handled by Endpoint
+    it("can pick up message", async () => {
+      // Get the adapter PDA
+      const [adapterPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("adapter_pda")],
+        program.programId
+      );
 
+      // Execute pick_up_message
+      await program.methods
+        .pickUpMessage()
+        .accounts({
+          outboxMessage: outboxMessage.publicKey,
+          adapterInfo: pdas.adapterInfo,
+          refundRecipient: payer.publicKey,
+        })
+        .accountsPartial({
+          adapterPda: adapterPda,
+          eventAuthority: pdas.eventAuthority,
+          endpointProgram: endpointProgram.programId,
+        })
+        .rpc();
+
+      const outboxMessageAccount = await endpointProgram.account.outboxMessage.fetchNullable(outboxMessage.publicKey);
+      assert.isNull(outboxMessageAccount, "Outbox message account should be null");
     });
   });
 });
