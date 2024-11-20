@@ -18,7 +18,7 @@ pub fn post_message<'info, A: TypePrefixedPayload>(
     pay_wormhole_fee(wormhole, &payer)?;
 
     let ix = wormhole::PostMessage {
-        config: wormhole.wormhole_bridge.to_account_info(),
+        config: wormhole.bridge.to_account_info(),
         message,
         emitter,
         sequence: wormhole.sequence.to_account_info(),
@@ -35,7 +35,7 @@ pub fn post_message<'info, A: TypePrefixedPayload>(
     ];
 
     wormhole::post_message(
-        CpiContext::new_with_signer(wormhole.wormhole_program.to_account_info(), ix, &seeds.concat()),
+        CpiContext::new_with_signer(wormhole.program.to_account_info(), ix, &seeds.concat()),
         batch_id,
         TypePrefixedPayload::to_vec_payload(payload),
         wormhole::Finality::Finalized,
@@ -48,7 +48,7 @@ fn pay_wormhole_fee<'info>(
     wormhole: &WormholeAccounts<'info>,
     payer: &AccountInfo<'info>,
 ) -> Result<()> {
-    if wormhole.wormhole_bridge.fee() > 0 {
+    if wormhole.bridge.fee() > 0 {
         anchor_lang::system_program::transfer(
             CpiContext::new(
                 wormhole.system_program.to_account_info(),
@@ -57,7 +57,7 @@ fn pay_wormhole_fee<'info>(
                     to: wormhole.fee_collector.to_account_info(),
                 },
             ),
-            wormhole.wormhole_bridge.fee(),
+            wormhole.bridge.fee(),
         )?;
     }
 

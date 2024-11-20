@@ -15,16 +15,20 @@ cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
-idl-build = ["anchor-lang/idl-build", "wormhole-anchor-sdk/idl-build"]
-mainnet = [ "wormhole-anchor-sdk/mainnet" ]
-solana-devnet = [ "wormhole-anchor-sdk/solana-devnet" ]
-tilt-devnet = [ "wormhole-anchor-sdk/tilt-devnet" ]
-tilt-devnet2 = [ "tilt-devnet" ]
+idl-build = [
+    "anchor-lang/idl-build",
+    "wormhole-anchor-sdk/idl-build",
+    "wormhole-anchor-sdk/mainnet",
+]
+mainnet = ["wormhole-anchor-sdk/mainnet"]
+solana-devnet = ["wormhole-anchor-sdk/solana-devnet"]
+tilt-devnet = ["wormhole-anchor-sdk/tilt-devnet"]
+tilt-devnet2 = ["tilt-devnet"]
 
 [dependencies]
-anchor-lang = { workspace = true }
-cfg-if = { workspace = true }
-universal-address = { workspace = true }
-wormhole-io = { workspace = true }
-wormhole-solana-utils = { workspace = true }
-wormhole-anchor-sdk = { workspace = true }
+anchor-lang = { workspace = true, features = ["init-if-needed", "event-cpi"] }
+cfg-if.workspace = true
+wormhole-anchor-sdk.workspace = true
+wormhole-io.workspace = true
+wormhole-solana-utils.workspace = true
+universal-address.workspace = true

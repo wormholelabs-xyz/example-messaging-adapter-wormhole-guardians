@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use wormhole_anchor_sdk::wormhole;
+use wormhole_anchor_sdk::wormhole::{self, program::Wormhole};
 
 // TODO: should we add emitter in here too?
 #[derive(Accounts)]
@@ -18,7 +18,7 @@ pub struct WormholeAccounts<'info> {
     /// CHECK: account will be checked and maybe initialized by the wormhole core bridge
     pub sequence: UncheckedAccount<'info>,
 
-    pub program: Program<'info, wormhole::program::Wormhole>,
+    pub program: Program<'info, Wormhole>,
 
     pub system_program: Program<'info, System>,
 
