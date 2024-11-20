@@ -4,6 +4,7 @@ pub mod error;
 pub mod event;
 pub mod instructions;
 pub mod state;
+pub mod wormhole;
 
 use instructions::*;
 

@@ -1,9 +1,0 @@
-[package]
-name = "universal-address"
-version = "0.1.0"
-edition = "2021"
-description = "Universal address format for cross-chain messaging"
-
-[dependencies]
-anchor-lang = { workspace = true, features = ["init-if-needed", "event-cpi"] }
-cfg-if = { workspace = true }

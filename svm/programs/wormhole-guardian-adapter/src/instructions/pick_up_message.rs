@@ -1,16 +1,26 @@
 declare_program!(endpoint);
 
+use crate::wormhole::accounts::*;
+use crate::wormhole::post_message;
+use crate::wormhole::GuardianMessage;
 use anchor_lang::prelude::*;
+use endpoint::{accounts::OutboxMessage, program::Endpoint, types::PickUpMessageArgs};
 
-use endpoint::{program::Endpoint, types::PickUpMessageArgs};
+use wormhole_io::{Readable, TypePrefixedPayload, Writeable};
 
 /// Accounts struct for the pick_up_message instruction
 #[derive(Accounts)]
 pub struct PickUpMessage<'info> {
     #[account(mut)]
+    pub payer: Signer<'info>,
+
     /// The outbox message account to be picked up
-    /// CHECK: This account is checked by the endpoint program
-    pub outbox_message: UncheckedAccount<'info>,
+    /// This account is mutable so we can update the `outstanding_adapters` state
+    #[account(
+        mut,
+        has_one = refund_recipient
+    )]
+    pub outbox_message: Account<'info, OutboxMessage>,
 
     /// The adapter info account
     /// CHECK: This account is checked by the endpoint program
@@ -40,6 +50,24 @@ pub struct PickUpMessage<'info> {
 
     /// The endpoint program
     pub endpoint_program: Program<'info, Endpoint>,
+
+    #[account(
+        mut,
+        seeds = [b"message", outbox_message.key().as_ref()],
+        bump,
+    )]
+    /// CHECK: initialized and written to by wormhole core bridge
+    pub wormhole_message: UncheckedAccount<'info>,
+
+    #[account(
+        seeds = [b"emitter"],
+        bump
+    )]
+    /// CHECK: wormhole uses this as the emitter address
+    pub emitter: UncheckedAccount<'info>,
+
+    /// The Wormhole accounts needed for posting messages
+    pub wormhole: WormholeAccounts<'info>,
 }
 
 impl<'info> PickUpMessage<'info> {
@@ -79,6 +107,29 @@ pub fn pick_up_message(ctx: Context<PickUpMessage>) -> Result<()> {
             adapter_program_id: crate::id(),
             adapter_pda_bump: ctx.bumps.adapter_pda,
         },
+    )?;
+
+    // Create the Wormhole message
+    let message = GuardianMessage {
+        src_addr: ctx.accounts.outbox_message.src_addr.bytes,
+        sequence: ctx.accounts.outbox_message.sequence,
+        dst_chain: ctx.accounts.outbox_message.dst_chain,
+        dst_addr: ctx.accounts.outbox_message.dst_addr.bytes,
+        payload_hash: ctx.accounts.outbox_message.payload_hash,
+    };
+
+    post_message(
+        &ctx.accounts.wormhole,
+        ctx.accounts.payer.to_account_info(),
+        ctx.accounts.wormhole_message.to_account_info(),
+        ctx.accounts.emitter.to_account_info(),
+        ctx.bumps.emitter,
+        &message,
+        &[&[
+            b"message",
+            ctx.accounts.outbox_message.key().as_ref(),
+            &[ctx.bumps.wormhole_message],
+        ]],
     )?;
 
     Ok(())
