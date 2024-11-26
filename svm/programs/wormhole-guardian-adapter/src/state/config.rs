@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 // This is compatible with that finality in `wormhole_anchor_sdk::wormhole::Finality`
-// We need our own type has the `wormhole_anchor_sdk::wormhole::Finality` does not implement InitSpace
+// We need our own type as the `wormhole_anchor_sdk::wormhole::Finality` does not implement InitSpace
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, PartialEq, Eq, InitSpace)]
 pub enum Finality {
     Confirmed,
