@@ -7,3 +7,6 @@
 [submodule "evm/lib/example-messaging-endpoint"]
 	path = evm/lib/example-messaging-endpoint
 	url = https://github.com/wormholelabs-xyz/example-messaging-endpoint
+[submodule "svm/lib/example-messaging-endpoint"]
+	path = svm/lib/example-messaging-endpoint
+	url = https://github.com/wormholelabs-xyz/example-messaging-endpoint
