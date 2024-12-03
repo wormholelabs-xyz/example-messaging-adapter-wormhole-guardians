@@ -13,12 +13,10 @@ string constant wormholeGuardiansAdapterVersionString = "WormholeGuardiansAdapte
 contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
     using BytesParsing for bytes; // Used by _decodePayload
 
-    string public constant versionString = wormholeGuardiansAdapterVersionString;
-    address public admin;
-    address public pendingAdmin;
-
     // ==================== Immutables ===============================================
 
+    address public admin;
+    address public pendingAdmin;
     uint16 public immutable ourChain;
     IEndpointAdapter public immutable endpoint;
     IWormhole public immutable wormhole;
@@ -168,8 +166,8 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
     // =============== Interface ===============================================================
 
     /// @inheritdoc IAdapter
-    function getAdapterType() external pure returns (string memory) {
-        return versionString;
+    function getAdapterType() external pure virtual returns (string memory) {
+        return wormholeGuardiansAdapterVersionString;
     }
 
     /// @inheritdoc IAdapter
@@ -186,7 +184,7 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
         UniversalAddress dstAddr,
         bytes32 payloadHash,
         address // refundAddr
-    ) external payable onlyEndpoint {
+    ) external payable virtual onlyEndpoint {
         bytes memory payload = _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
         wormhole.publishMessage{value: msg.value}(0, payload, consistencyLevel);
         emit MessageSent(srcAddr, dstChain, dstAddr, sequence, payloadHash);
