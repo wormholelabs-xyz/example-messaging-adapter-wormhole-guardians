@@ -2,7 +2,6 @@
 pragma solidity ^0.8.19;
 
 import "example-messaging-endpoint/evm/src/interfaces/IEndpointAdapter.sol";
-
 import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
 
@@ -171,7 +170,12 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
     }
 
     /// @inheritdoc IAdapter
-    function quoteDeliveryPrice(uint16 /*dstChain*/ ) external view returns (uint256) {
+    function quoteDeliveryPrice(uint16, /*dstChain*/ bytes calldata /*instructions*/ )
+        external
+        view
+        virtual
+        returns (uint256)
+    {
         return wormhole.messageFee();
     }
 
@@ -183,7 +187,8 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
         uint16 dstChain,
         UniversalAddress dstAddr,
         bytes32 payloadHash,
-        address // refundAddr
+        address, // refundAddr
+        bytes calldata // instructions
     ) external payable virtual onlyEndpoint {
         bytes memory payload = _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
         wormhole.publishMessage{value: msg.value}(0, payload, consistencyLevel);

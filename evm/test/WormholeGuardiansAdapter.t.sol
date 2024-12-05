@@ -164,7 +164,7 @@ contract WormholeGuardiansAdapterTest is Test {
         srcAdapter.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
 
         // But you can quote the delivery price while a transfer is pending.
-        srcAdapter.quoteDeliveryPrice(peerChain1);
+        srcAdapter.quoteDeliveryPrice(peerChain1, new bytes(0));
 
         // And you can send a message while a transfer is pending.
         UniversalAddress srcAddr = UniversalAddressLibrary.fromAddress(address(userA));
@@ -176,7 +176,9 @@ contract WormholeGuardiansAdapterTest is Test {
         uint256 deliverPrice = 382;
 
         vm.startPrank(endpointAddr);
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
 
         // And you can receive a message while a transfer is pending.
         destAdapter.receiveMessage(srcWormhole.lastVaa());
@@ -280,7 +282,10 @@ contract WormholeGuardiansAdapterTest is Test {
     }
 
     function test_quoteDeliveryPrice() public view {
-        require(srcAdapter.quoteDeliveryPrice(peerChain1) == srcWormhole.fixedMessageFee(), "message fee is wrong");
+        require(
+            srcAdapter.quoteDeliveryPrice(peerChain1, new bytes(0)) == srcWormhole.fixedMessageFee(),
+            "message fee is wrong"
+        );
     }
 
     function test_sendMessage() public {
@@ -293,7 +298,9 @@ contract WormholeGuardiansAdapterTest is Test {
         uint256 deliverPrice = 382;
 
         vm.startPrank(endpointAddr);
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
 
         require(srcWormhole.messagesSent() == 1, "Message count is wrong");
         require(srcWormhole.lastNonce() == 0, "Nonce is wrong");
@@ -308,7 +315,9 @@ contract WormholeGuardiansAdapterTest is Test {
         // Only the endpoint can call send message.
         vm.startPrank(someoneElse);
         vm.expectRevert(abi.encodeWithSelector(IAdapter.CallerNotEndpoint.selector, someoneElse));
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
     }
 
     function test_receiveMessage() public {
@@ -326,7 +335,9 @@ contract WormholeGuardiansAdapterTest is Test {
         uint256 deliverPrice = 382;
 
         vm.startPrank(endpointAddr);
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
         bytes memory vaa = srcWormhole.lastVaa();
 
         // This should work.

@@ -29,6 +29,14 @@ contract WormholeGuardiansAdapterWithExecutorForTest is WormholeGuardiansAdapter
     ) external pure returns (bytes memory payload) {
         return _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
     }
+
+    function parseInstructions(bytes calldata buf)
+        external
+        pure
+        returns (uint256 execMsgValue, bytes memory signedQuote, bytes memory relayInst)
+    {
+        return _parseInstructions(buf);
+    }
 }
 
 contract WormholeGuardiansAdapterWithExecutorTest is Test {
@@ -84,6 +92,7 @@ contract WormholeGuardiansAdapterWithExecutorTest is Test {
         // Give everyone some money to play with.
         vm.deal(integratorAddr, 1 ether);
         vm.deal(endpointAddr, 1 ether);
+        vm.deal(address(srcAdapter), 1 ether);
         vm.deal(userA, 1 ether);
         vm.deal(someoneElse, 1 ether);
     }
@@ -137,7 +146,69 @@ contract WormholeGuardiansAdapterWithExecutorTest is Test {
         );
     }
 
-    // TODO: This should do something different!
+    function test_encodeInstructions() public {
+        // Standard encode.
+        uint256 execMsgValue = 1;
+        bytes memory signedQuote = "Hello, World!";
+        bytes memory relayInstructions = "Hey, relayer, you should do something!";
+        bytes memory expected = abi.encodePacked(
+            uint8(1),
+            execMsgValue,
+            uint16(signedQuote.length),
+            signedQuote,
+            uint16(relayInstructions.length),
+            relayInstructions
+        );
+        bytes memory encoded = srcAdapter.encodeInstructions(execMsgValue, signedQuote, relayInstructions);
+        assertEq(keccak256(expected), keccak256(encoded));
+
+        // No signed quote or instructions.
+        signedQuote = new bytes(0);
+        relayInstructions = new bytes(0);
+        expected = abi.encodePacked(
+            uint8(1),
+            execMsgValue,
+            uint16(signedQuote.length),
+            signedQuote,
+            uint16(relayInstructions.length),
+            relayInstructions
+        );
+        encoded = srcAdapter.encodeInstructions(execMsgValue, signedQuote, relayInstructions);
+        assertEq(keccak256(expected), keccak256(encoded));
+
+        // Signed quote too long.
+        signedQuote = new bytes(65536);
+        relayInstructions = new bytes(0);
+        vm.expectRevert(abi.encodeWithSelector(WormholeGuardiansAdapterWithExecutor.SignedQuoteTooLong.selector));
+        encoded = srcAdapter.encodeInstructions(execMsgValue, signedQuote, relayInstructions);
+
+        // Relay instructions too long.
+        signedQuote = new bytes(0);
+        relayInstructions = new bytes(65536);
+        vm.expectRevert(abi.encodeWithSelector(WormholeGuardiansAdapterWithExecutor.RelayInstructionsTooLong.selector));
+        encoded = srcAdapter.encodeInstructions(execMsgValue, signedQuote, relayInstructions);
+    }
+
+    function test_parseInstructions() public {
+        // Empty instructions.
+        vm.expectRevert(abi.encodeWithSelector(BytesParsing.OutOfBounds.selector, 1, 0));
+        srcAdapter.parseInstructions(new bytes(0));
+
+        // Something useful.
+        uint256 expectedExecMsgValue = 123456;
+        bytes memory expectedSignedQuote = "Hi, Mom!";
+        bytes memory expectedRelayInstructions = "Hello, world!";
+
+        bytes memory instructions =
+            srcAdapter.encodeInstructions(expectedExecMsgValue, expectedSignedQuote, expectedRelayInstructions);
+        (uint256 execMsgValue, bytes memory signedQuote, bytes memory relayInstructions) =
+            srcAdapter.parseInstructions(instructions);
+
+        assertEq(expectedExecMsgValue, execMsgValue);
+        assertEq(keccak256(expectedSignedQuote), keccak256(signedQuote));
+        assertEq(keccak256(expectedRelayInstructions), keccak256(relayInstructions));
+    }
+
     function test_sendMessage() public {
         UniversalAddress srcAddr = UniversalAddressLibrary.fromAddress(address(userA));
         uint16 dstChain = peerChain1;
@@ -147,8 +218,24 @@ contract WormholeGuardiansAdapterWithExecutorTest is Test {
         address refundAddr = userA;
         uint256 deliverPrice = 382;
 
+        uint256 execMsgValue = 123;
+        bytes memory signedQuote = "Hi, Mom!";
+        bytes memory relayInstructions = "Hello, world!";
+
+        bytes memory instructions = srcAdapter.encodeInstructions(execMsgValue, signedQuote, relayInstructions);
+
+        // Only the endpoint can call send message.
+        vm.startPrank(someoneElse);
+        vm.expectRevert(abi.encodeWithSelector(IAdapter.CallerNotEndpoint.selector, someoneElse));
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, instructions
+        );
+
+        // This should work.
         vm.startPrank(endpointAddr);
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, instructions
+        );
 
         require(srcWormhole.messagesSent() == 1, "Message count is wrong");
         require(srcWormhole.lastNonce() == 0, "Nonce is wrong");
@@ -160,9 +247,41 @@ contract WormholeGuardiansAdapterWithExecutorTest is Test {
             keccak256(abi.encodePacked(srcWormhole.lastPayload())) == keccak256(expectedPayload), "Payload is wrong"
         );
 
-        // Only the endpoint can call send message.
-        vm.startPrank(someoneElse);
-        vm.expectRevert(abi.encodeWithSelector(IAdapter.CallerNotEndpoint.selector, someoneElse));
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        require(srcExecutor.lastExecMsgValue() == execMsgValue, "Exec msg value is wrong");
+
+        require(
+            keccak256(abi.encodePacked(srcExecutor.lastSignedQuote())) == keccak256(signedQuote),
+            "Signed quote is wrong"
+        );
+
+        require(
+            keccak256(abi.encodePacked(srcExecutor.lastRelayInstructions())) == keccak256(relayInstructions),
+            "Relay instructions are wrong"
+        );
+
+        // Extra bytes on the end of the instructions should revert.
+        instructions = abi.encodePacked(instructions, "x");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                WormholeGuardiansAdapterWithExecutor.InvalidInstructionsLength.selector,
+                instructions.length,
+                instructions.length - 1
+            )
+        );
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, instructions
+        );
+    }
+
+    function test_quoteDeliveryPrice() public {
+        bytes memory instructions = srcAdapter.encodeInstructions(1, "Hi, Mom!", "Hello, world!");
+        require(
+            srcAdapter.quoteDeliveryPrice(peerChain1, instructions) == srcWormhole.fixedMessageFee() + 1,
+            "message fee is wrong"
+        );
+
+        // Without instructions should revert.
+        vm.expectRevert(abi.encodeWithSelector(BytesParsing.OutOfBounds.selector, 1, 0));
+        srcAdapter.quoteDeliveryPrice(peerChain1, new bytes(0));
     }
 }

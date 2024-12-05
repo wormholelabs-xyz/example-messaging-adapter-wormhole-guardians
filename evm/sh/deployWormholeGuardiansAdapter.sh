@@ -3,7 +3,7 @@
 #
 # This script deploys the WormholeGuardiansAdapter contract.
 # Usage: RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ADMIN= ENDPOINT= WORMHOLE= CONSISTENCY_LEVEL= ./sh/deployWormholeGuardiansAdapter.sh
-#  tilt: ENDPOINT=0x1aBE68277AE236083947f2551FEe8b885efCA8f5 ./sh/deployWormholeGuardiansAdapter.sh
+#  tilt: ENDPOINT=0x8186Eaa8CE62Bb3a1a72DA4B103D98AFff417B4A ./sh/deployWormholeGuardiansAdapter.sh
 #
 
 [[ -z $ENDPOINT ]] && { echo "Missing ENDPOINT"; exit 1; }

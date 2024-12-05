@@ -8,6 +8,7 @@ contract MockExecutor {
     uint16 public immutable ourChain;
 
     // These are set on calls.
+    uint256 public lastExecMsgValue;
     uint16 public lastDstChain;
     bytes32 public lastDstAddr;
     address public lastRefundAddr;
@@ -26,7 +27,8 @@ contract MockExecutor {
         bytes calldata signedQuote,
         bytes calldata requestBytes,
         bytes calldata relayInstructions
-    ) external {
+    ) external payable {
+        lastExecMsgValue = msg.value;
         lastDstChain = dstChain;
         lastDstAddr = dstAddr;
         lastRefundAddr = refundAddr;
