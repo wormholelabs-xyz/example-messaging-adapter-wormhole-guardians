@@ -2,15 +2,16 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
 import "example-messaging-endpoint/evm/src/libraries/UniversalAddress.sol";
 import "../src/WormholeGuardiansAdapter.sol";
 import "../src/interfaces/IWormholeGuardiansAdapter.sol";
+import "./mocks/MockEndpoint.sol";
+import "./mocks/MockWormhole.sol";
 
 contract WormholeGuardiansAdapterForTest is WormholeGuardiansAdapter {
-    constructor(uint16 _ourChain, address _admin, address _endpoint, address srcWormhole, uint8 _consistencyLevel)
-        WormholeGuardiansAdapter(_ourChain, _admin, _endpoint, srcWormhole, _consistencyLevel)
+    constructor(uint16 _ourChain, address _admin, address _endpoint, address _wormhole, uint8 _consistencyLevel)
+        WormholeGuardiansAdapter(_ourChain, _admin, _endpoint, _wormhole, _consistencyLevel)
     {}
 
     function encodePayload(
@@ -35,112 +36,6 @@ contract WormholeGuardiansAdapterForTest is WormholeGuardiansAdapter {
         )
     {
         return _decodePayload(payload);
-    }
-}
-
-contract MockWormhole {
-    uint256 public constant fixedMessageFee = 250;
-
-    uint16 public immutable ourChain;
-
-    bool public validFlag;
-    string public invalidReason;
-
-    // These are incremented on calls.
-    uint256 public messagesSent;
-    uint32 public seqSent;
-
-    // These are set on calls.
-    uint256 public lastDeliveryPrice;
-    uint32 public lastNonce;
-    uint8 public lastConsistencyLevel;
-    bytes public lastPayload;
-    bytes public lastVaa;
-    bytes32 public lastVaaHash;
-
-    constructor(uint16 _ourChain) {
-        ourChain = _ourChain;
-        validFlag = true;
-    }
-
-    function setValidFlag(bool v, string memory reason) external {
-        validFlag = v;
-        invalidReason = reason;
-    }
-
-    function messageFee() external pure returns (uint256) {
-        return fixedMessageFee;
-    }
-
-    function publishMessage(uint32 nonce, bytes memory payload, uint8 consistencyLevel)
-        external
-        payable
-        returns (uint64 sequence)
-    {
-        seqSent += 1;
-        sequence = seqSent;
-
-        lastDeliveryPrice = msg.value;
-        lastNonce = nonce;
-        lastConsistencyLevel = consistencyLevel;
-        lastPayload = payload;
-        messagesSent += 1;
-
-        bytes32 sender = UniversalAddressLibrary.fromAddress(msg.sender).toBytes32();
-        bytes32 hash = keccak256(payload);
-
-        lastVaa = abi.encode(ourChain, sender, sequence, hash, payload);
-        lastVaaHash = hash;
-    }
-
-    function parseAndVerifyVM(bytes calldata encodedVM)
-        external
-        view
-        returns (IWormhole.VM memory vm, bool valid, string memory reason)
-    {
-        valid = validFlag;
-        reason = invalidReason;
-
-        // These are the fields that the adapter uses:
-        // vm.emitterChainId
-        // vm.emitterAddress
-        // vm.hash
-        // vm.payload
-
-        (vm.emitterChainId, vm.emitterAddress, vm.sequence, vm.hash, vm.payload) =
-            abi.decode(encodedVM, (uint16, bytes32, uint64, bytes32, bytes));
-    }
-}
-
-contract MockEndpoint {
-    uint16 public immutable ourChain;
-
-    // These are set on calls.
-    uint16 public lastSourceChain;
-    UniversalAddress public lastSourceAddress;
-    uint64 public lastSequence;
-    uint16 public lastDestinationChain;
-    UniversalAddress public lastDestinationAddress;
-    bytes32 public lastPayloadHash;
-
-    constructor(uint16 _ourChain) {
-        ourChain = _ourChain;
-    }
-
-    function attestMessage(
-        uint16 srcChain,
-        UniversalAddress srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        UniversalAddress destinationAddress,
-        bytes32 payloadHash
-    ) external {
-        lastSourceChain = srcChain;
-        lastSourceAddress = srcAddr;
-        lastSequence = sequence;
-        lastDestinationChain = dstChain;
-        lastDestinationAddress = destinationAddress;
-        lastPayloadHash = payloadHash;
     }
 }
 
@@ -269,7 +164,7 @@ contract WormholeGuardiansAdapterTest is Test {
         srcAdapter.setPeer(0, UniversalAddressLibrary.fromAddress(peerAddress1).toBytes32());
 
         // But you can quote the delivery price while a transfer is pending.
-        srcAdapter.quoteDeliveryPrice(peerChain1);
+        srcAdapter.quoteDeliveryPrice(peerChain1, new bytes(0));
 
         // And you can send a message while a transfer is pending.
         UniversalAddress srcAddr = UniversalAddressLibrary.fromAddress(address(userA));
@@ -281,7 +176,9 @@ contract WormholeGuardiansAdapterTest is Test {
         uint256 deliverPrice = 382;
 
         vm.startPrank(endpointAddr);
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
 
         // And you can receive a message while a transfer is pending.
         destAdapter.receiveMessage(srcWormhole.lastVaa());
@@ -379,13 +276,16 @@ contract WormholeGuardiansAdapterTest is Test {
     function test_getAdapterType() public view {
         require(
             keccak256(abi.encodePacked(srcAdapter.getAdapterType()))
-                == keccak256(abi.encodePacked(srcAdapter.versionString())),
-            "srcAdapter type mismatch"
+                == keccak256(abi.encodePacked(wormholeGuardiansAdapterVersionString)),
+            "adapter type mismatch"
         );
     }
 
     function test_quoteDeliveryPrice() public view {
-        require(srcAdapter.quoteDeliveryPrice(peerChain1) == srcWormhole.fixedMessageFee(), "message fee is wrong");
+        require(
+            srcAdapter.quoteDeliveryPrice(peerChain1, new bytes(0)) == srcWormhole.fixedMessageFee(),
+            "message fee is wrong"
+        );
     }
 
     function test_sendMessage() public {
@@ -398,7 +298,9 @@ contract WormholeGuardiansAdapterTest is Test {
         uint256 deliverPrice = 382;
 
         vm.startPrank(endpointAddr);
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
 
         require(srcWormhole.messagesSent() == 1, "Message count is wrong");
         require(srcWormhole.lastNonce() == 0, "Nonce is wrong");
@@ -413,7 +315,9 @@ contract WormholeGuardiansAdapterTest is Test {
         // Only the endpoint can call send message.
         vm.startPrank(someoneElse);
         vm.expectRevert(abi.encodeWithSelector(IAdapter.CallerNotEndpoint.selector, someoneElse));
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
     }
 
     function test_receiveMessage() public {
@@ -431,7 +335,9 @@ contract WormholeGuardiansAdapterTest is Test {
         uint256 deliverPrice = 382;
 
         vm.startPrank(endpointAddr);
-        srcAdapter.sendMessage{value: deliverPrice}(srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr);
+        srcAdapter.sendMessage{value: deliverPrice}(
+            srcAddr, sequence, dstChain, dstAddr, payloadHash, refundAddr, new bytes(0)
+        );
         bytes memory vaa = srcWormhole.lastVaa();
 
         // This should work.

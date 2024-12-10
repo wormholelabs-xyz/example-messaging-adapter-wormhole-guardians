@@ -2,7 +2,6 @@
 pragma solidity ^0.8.19;
 
 import "example-messaging-endpoint/evm/src/interfaces/IEndpointAdapter.sol";
-
 import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "wormhole-solidity-sdk/interfaces/IWormhole.sol";
 
@@ -13,12 +12,10 @@ string constant wormholeGuardiansAdapterVersionString = "WormholeGuardiansAdapte
 contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
     using BytesParsing for bytes; // Used by _decodePayload
 
-    string public constant versionString = wormholeGuardiansAdapterVersionString;
-    address public admin;
-    address public pendingAdmin;
-
     // ==================== Immutables ===============================================
 
+    address public admin;
+    address public pendingAdmin;
     uint16 public immutable ourChain;
     IEndpointAdapter public immutable endpoint;
     IWormhole public immutable wormhole;
@@ -168,12 +165,17 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
     // =============== Interface ===============================================================
 
     /// @inheritdoc IAdapter
-    function getAdapterType() external pure returns (string memory) {
-        return versionString;
+    function getAdapterType() external pure virtual returns (string memory) {
+        return wormholeGuardiansAdapterVersionString;
     }
 
     /// @inheritdoc IAdapter
-    function quoteDeliveryPrice(uint16 /*dstChain*/ ) external view returns (uint256) {
+    function quoteDeliveryPrice(uint16, /*dstChain*/ bytes calldata /*instructions*/ )
+        external
+        view
+        virtual
+        returns (uint256)
+    {
         return wormhole.messageFee();
     }
 
@@ -185,8 +187,9 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
         uint16 dstChain,
         UniversalAddress dstAddr,
         bytes32 payloadHash,
-        address // refundAddr
-    ) external payable onlyEndpoint {
+        address, // refundAddr
+        bytes calldata // instructions
+    ) external payable virtual onlyEndpoint {
         bytes memory payload = _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
         wormhole.publishMessage{value: msg.value}(0, payload, consistencyLevel);
         emit MessageSent(srcAddr, dstChain, dstAddr, sequence, payloadHash);
