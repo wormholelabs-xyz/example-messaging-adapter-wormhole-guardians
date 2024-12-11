@@ -1,17 +1,31 @@
 import { ethers } from "ethers";
-import { WormholeGuardiansAdapterWithExecutor__factory } from "../../../abi/factories/WormholeGuardiansAdapterWithExecutor__factory";
-import { IWormholeGuardiansAdapter } from "../../../abi/WormholeGuardiansAdapterWithExecutor";
+import {
+  IWormholeGuardiansAdapter,
+  WormholeGuardiansAdapter,
+  WormholeGuardiansAdapter__factory,
+  WormholeGuardiansAdapterWithExecutor,
+  WormholeGuardiansAdapterWithExecutor__factory,
+} from "../../../abi";
 
 export async function setPeer(
   contractAddress: string,
   signer: ethers.Signer,
   peerChain: number,
   peerContract: string,
+  withExecutor: boolean = true,
 ): Promise<void> {
-  const contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
-    contractAddress,
-    signer,
-  );
+  let contract: WormholeGuardiansAdapter | WormholeGuardiansAdapterWithExecutor;
+  if (withExecutor) {
+    contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
+      contractAddress,
+      signer,
+    );
+  } else {
+    contract = WormholeGuardiansAdapter__factory.connect(
+      contractAddress,
+      signer,
+    );
+  }
   const tx = await contract.setPeer(peerChain, peerContract);
   await tx.wait();
 }
@@ -19,11 +33,20 @@ export async function setPeer(
 export async function getPeers(
   contractAddress: string,
   signer: ethers.Signer,
+  withExecutor: boolean = true,
 ): Promise<IWormholeGuardiansAdapter.PeerEntryStructOutput[]> {
-  const contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
-    contractAddress,
-    signer,
-  );
+  let contract: WormholeGuardiansAdapter | WormholeGuardiansAdapterWithExecutor;
+  if (withExecutor) {
+    contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
+      contractAddress,
+      signer,
+    );
+  } else {
+    contract = WormholeGuardiansAdapter__factory.connect(
+      contractAddress,
+      signer,
+    );
+  }
   const result: IWormholeGuardiansAdapter.PeerEntryStructOutput[] =
     await contract.getPeers();
   return result;
@@ -33,11 +56,20 @@ export async function getPeer(
   contractAddress: string,
   signer: ethers.Signer,
   peerChain: number,
+  withExecutor: boolean = true,
 ): Promise<string> {
-  const contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
-    contractAddress,
-    signer,
-  );
+  let contract: WormholeGuardiansAdapter | WormholeGuardiansAdapterWithExecutor;
+  if (withExecutor) {
+    contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
+      contractAddress,
+      signer,
+    );
+  } else {
+    contract = WormholeGuardiansAdapter__factory.connect(
+      contractAddress,
+      signer,
+    );
+  }
   const result: string = await contract.getPeer(peerChain);
   return result;
 }

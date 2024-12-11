@@ -1,15 +1,29 @@
 import { ethers } from "ethers";
-import { WormholeGuardiansAdapterWithExecutor__factory } from "../../../abi/factories/WormholeGuardiansAdapterWithExecutor__factory";
+import {
+  WormholeGuardiansAdapter,
+  WormholeGuardiansAdapter__factory,
+  WormholeGuardiansAdapterWithExecutor,
+  WormholeGuardiansAdapterWithExecutor__factory,
+} from "../../../abi";
 
 export async function receiveMessage(
   contractAddress: string,
   signer: ethers.Signer,
   message: Uint8Array,
+  withExecutor: boolean = true,
 ): Promise<void> {
-  const contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
-    contractAddress,
-    signer,
-  );
+  let contract: WormholeGuardiansAdapter | WormholeGuardiansAdapterWithExecutor;
+  if (withExecutor) {
+    contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
+      contractAddress,
+      signer,
+    );
+  } else {
+    contract = WormholeGuardiansAdapter__factory.connect(
+      contractAddress,
+      signer,
+    );
+  }
   const tx = await contract.receiveMessage(message);
   await tx.wait();
 }
@@ -24,11 +38,20 @@ export async function sendMessage(
   payloadHash: string,
   refundAddr: string,
   instructions: Uint8Array,
+  withExecutor: boolean = true,
 ): Promise<void> {
-  const contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
-    contractAddress,
-    signer,
-  );
+  let contract: WormholeGuardiansAdapter | WormholeGuardiansAdapterWithExecutor;
+  if (withExecutor) {
+    contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
+      contractAddress,
+      signer,
+    );
+  } else {
+    contract = WormholeGuardiansAdapter__factory.connect(
+      contractAddress,
+      signer,
+    );
+  }
   const tx = await contract.sendMessage(
     srcAddr,
     sequence,
@@ -46,11 +69,20 @@ export async function quoteDeliveryPrice(
   signer: ethers.Signer,
   destChain: number,
   instructions: string,
+  withExecutor: boolean = true,
 ): Promise<bigint> {
-  const contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
-    contractAddress,
-    signer,
-  );
+  let contract: WormholeGuardiansAdapter | WormholeGuardiansAdapterWithExecutor;
+  if (withExecutor) {
+    contract = WormholeGuardiansAdapterWithExecutor__factory.connect(
+      contractAddress,
+      signer,
+    );
+  } else {
+    contract = WormholeGuardiansAdapter__factory.connect(
+      contractAddress,
+      signer,
+    );
+  }
   const result = await contract.quoteDeliveryPrice(destChain, instructions);
   return result;
 }
