@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import "wormhole-solidity-sdk/libraries/BytesParsing.sol";
 import "example-messaging-executor/evm/src/interfaces/IExecutor.sol";
+import "example-messaging-executor/evm/src/libraries/ExecutorMessages.sol";
 
 import "./WormholeGuardiansAdapter.sol";
 
@@ -10,6 +11,10 @@ string constant wormholeGuardiansAdapterWithExecutorVersionString = "WormholeGua
 
 contract WormholeGuardiansAdapterWithExecutor is WormholeGuardiansAdapter {
     using BytesParsing for bytes; // Used to parse the instructions
+
+    // ==================== Immutables ===============================================
+
+    bytes32 public emitterAddress;
 
     // Version number of the encoded adapter instructions.
     uint8 private constant INST_VERSION = 1;
@@ -44,6 +49,7 @@ contract WormholeGuardiansAdapterWithExecutor is WormholeGuardiansAdapter {
     ) WormholeGuardiansAdapter(_ourChain, _admin, _endpoint, _wormhole, _consistencyLevel) {
         assert(_executor != address(0));
         executor = IExecutor(_executor);
+        emitterAddress = UniversalAddressLibrary.fromAddress(address(this)).toBytes32();
     }
 
     /// @inheritdoc IAdapter
@@ -62,15 +68,20 @@ contract WormholeGuardiansAdapterWithExecutor is WormholeGuardiansAdapter {
         address refundAddr,
         bytes calldata instructions
     ) external payable override onlyEndpoint {
-        bytes memory payload = _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
-        wormhole.publishMessage{value: msg.value}(0, payload, consistencyLevel);
-        emit MessageSent(srcAddr, dstChain, dstAddr, sequence, payloadHash);
-
         (uint256 execMsgValue, bytes memory signedQuote, bytes memory relayInstructions) =
             _parseInstructions(instructions);
 
+        bytes memory payload = _encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        uint64 coreSeq = wormhole.publishMessage{value: msg.value - execMsgValue}(0, payload, consistencyLevel);
+        emit MessageSent(srcAddr, dstChain, dstAddr, sequence, payloadHash);
+
         executor.requestExecution{value: execMsgValue}(
-            dstChain, dstAddr.toBytes32(), refundAddr, signedQuote, payload, relayInstructions
+            dstChain,
+            dstAddr.toBytes32(),
+            refundAddr,
+            signedQuote,
+            ExecutorMessages.makeVAAV1Request(ourChain, emitterAddress, coreSeq),
+            relayInstructions
         );
     }
 
