@@ -216,7 +216,7 @@ contract WormholeGuardiansAdapterWithExecutorTest is Test {
         uint64 sequence = 42;
         bytes32 payloadHash = keccak256("message one");
         address refundAddr = userA;
-        uint256 deliverPrice = 382;
+        uint256 deliverPrice = 1000;
 
         uint256 execMsgValue = 123;
         bytes memory signedQuote = "Hi, Mom!";
@@ -240,7 +240,7 @@ contract WormholeGuardiansAdapterWithExecutorTest is Test {
         require(srcWormhole.messagesSent() == 1, "Message count is wrong");
         require(srcWormhole.lastNonce() == 0, "Nonce is wrong");
         require(srcWormhole.lastConsistencyLevel() == consistencyLevel, "Consistency level is wrong");
-        require(srcWormhole.lastDeliveryPrice() == deliverPrice, "Deliver price is wrong");
+        require(srcWormhole.lastDeliveryPrice() == deliverPrice - execMsgValue, "Deliver price is wrong");
 
         bytes memory expectedPayload = srcAdapter.encodePayload(srcAddr, sequence, dstChain, dstAddr, payloadHash);
         require(
