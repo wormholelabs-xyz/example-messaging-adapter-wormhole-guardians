@@ -12,6 +12,14 @@ export async function setPeer(
   peerChain: number,
   peerContract: string,
 ): Promise<void> {
+  // The contract expects peerContract to be a bytes32.
+  // Do some length checking here.
+  // The peerContract is a 0x-prefixed hex string.
+  if (peerContract.length !== 66) {
+    throw new Error(
+      "peerContract must be a bytes32 hex string prefixed with 0x",
+    );
+  }
   const contract:
     | WormholeGuardiansAdapter
     | WormholeGuardiansAdapterWithExecutor = await getContract(
