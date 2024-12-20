@@ -70,7 +70,7 @@ interface IWormholeGuardiansAdapter is IAdapter {
     error CallerNotAdmin(address caller);
 
     /// @notice Error when an admin action is attempted while an admin transfer is pending.
-    /// @dev Selector: 9e78953d
+    /// @dev Selector: 0x9e78953d
     error AdminTransferPending();
 
     /// @notice Error when an attempt to claim the admin is made when there is no transfer pending.
