@@ -18,3 +18,7 @@ lcov.info
 
 # Flattened source
 flattened
+
+# Generated files
+sdk/ts/src/abi/
+sdk/ts/dist/
