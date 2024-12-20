@@ -77,7 +77,7 @@ contract WormholeGuardiansAdapterWithExecutor is WormholeGuardiansAdapter {
 
         executor.requestExecution{value: execMsgValue}(
             dstChain,
-            dstAddr.toBytes32(),
+            getPeer(dstChain),
             refundAddr,
             signedQuote,
             ExecutorMessages.makeVAAV1Request(ourChain, emitterAddress, coreSeq),
