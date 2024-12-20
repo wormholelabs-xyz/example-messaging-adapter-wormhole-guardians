@@ -96,10 +96,15 @@ interface IWormholeGuardiansAdapter is IAdapter {
     /// @dev Selector: 0xf839a0cb
     error InvalidPeerZeroAddress();
 
-    /// @notice Error when the chain ID doesn't match this chain.
+    /// @notice Error when the chain ID is zero or our chain.
     /// @dev Selector: 0x587c94c3
     /// @param chain The Wormhole chain ID of the peer.
     error InvalidChain(uint16 chain);
+
+    /// @notice Error when the peer adapter is not registered for the given chain.
+    /// @dev Selector: 0xa98c9e21
+    /// @param chain The Wormhole chain ID of the peer.
+    error UnregisteredPeer(uint16 chain);
 
     /// @notice Error when the peer adapter is invalid.
     /// @dev Selector: 0xaf1181fa

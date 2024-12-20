@@ -224,6 +224,9 @@ contract WormholeGuardiansAdapterWithExecutorTest is Test {
 
         bytes memory instructions = srcAdapter.encodeInstructions(execMsgValue, signedQuote, relayInstructions);
 
+        vm.startPrank(admin);
+        srcAdapter.setPeer(dstChain, dstAddr.toBytes32());
+
         // Only the endpoint can call send message.
         vm.startPrank(someoneElse);
         vm.expectRevert(abi.encodeWithSelector(IAdapter.CallerNotEndpoint.selector, someoneElse));

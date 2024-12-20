@@ -60,8 +60,11 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
     // =============== Public Getters ======================================================
 
     /// @inheritdoc IWormholeGuardiansAdapter
-    function getPeer(uint16 chainId) public view returns (bytes32) {
-        return _getPeersStorage()[chainId];
+    function getPeer(uint16 chainId) public view returns (bytes32 peerContract) {
+        peerContract = _getPeersStorage()[chainId];
+        if (peerContract == bytes32(0)) {
+            revert UnregisteredPeer(chainId);
+        }
     }
 
     /// @inheritdoc IWormholeGuardiansAdapter
@@ -143,7 +146,7 @@ contract WormholeGuardiansAdapter is IWormholeGuardiansAdapter {
 
     /// @inheritdoc IWormholeGuardiansAdapter
     function setPeer(uint16 peerChain, bytes32 peerContract) external onlyAdmin {
-        if (peerChain == 0) {
+        if (peerChain == 0 || peerChain == ourChain) {
             revert InvalidChain(peerChain);
         }
         if (peerContract == bytes32(0)) {

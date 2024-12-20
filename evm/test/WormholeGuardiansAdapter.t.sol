@@ -51,6 +51,7 @@ contract WormholeGuardiansAdapterTest is Test {
     WormholeGuardiansAdapterForTest public srcAdapter;
     MockWormhole destWormhole;
     WormholeGuardiansAdapterForTest public destAdapter;
+    WormholeGuardiansAdapterForTest public otherDestAdapter;
     uint8 consistencyLevel = 200;
 
     uint16 ourChain = 42;
@@ -75,6 +76,9 @@ contract WormholeGuardiansAdapterTest is Test {
             new WormholeGuardiansAdapterForTest(srcChain, admin, endpointAddr, address(srcWormhole), consistencyLevel);
         destWormhole = new MockWormhole(destChain);
         destAdapter = new WormholeGuardiansAdapterForTest(
+            destChain, admin, address(destEndpoint), address(destWormhole), consistencyLevel
+        );
+        otherDestAdapter = new WormholeGuardiansAdapterForTest(
             destChain, admin, address(destEndpoint), address(destWormhole), consistencyLevel
         );
 
@@ -266,11 +270,9 @@ contract WormholeGuardiansAdapterTest is Test {
             "Peer for chain two is wrong"
         );
 
-        // If you get a peer for a chain that's not set, it returns zero.
-        require(
-            srcAdapter.getPeer(peerChain3) == UniversalAddressLibrary.fromAddress(address(0)).toBytes32(),
-            "Peer for chain three should not be set"
-        );
+        // If you get a peer for a chain that's not set, it reverts.
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.UnregisteredPeer.selector, peerChain3));
+        srcAdapter.getPeer(peerChain3);
     }
 
     function test_getAdapterType() public view {
@@ -325,6 +327,7 @@ contract WormholeGuardiansAdapterTest is Test {
         vm.startPrank(admin);
         srcAdapter.setPeer(destChain, UniversalAddressLibrary.fromAddress(address(destAdapter)).toBytes32());
         destAdapter.setPeer(srcChain, UniversalAddressLibrary.fromAddress(address(srcAdapter)).toBytes32());
+        otherDestAdapter.setPeer(srcChain, bytes32(uint256(1)));
 
         UniversalAddress srcAddr = UniversalAddressLibrary.fromAddress(address(userA));
         uint16 dstChain = destChain;
@@ -350,11 +353,15 @@ contract WormholeGuardiansAdapterTest is Test {
         require(destEndpoint.lastDestinationAddress() == dstAddr, "dstAddr is wrong");
         require(destEndpoint.lastPayloadHash() == payloadHash, "payloadHash is wrong");
 
+        // Can't post it from a chain that isn't registered
+        vm.expectRevert(abi.encodeWithSelector(IWormholeGuardiansAdapter.UnregisteredPeer.selector, srcChain));
+        srcAdapter.receiveMessage(vaa);
         // Can't post it to the wrong adapter.
+        vm.startPrank(endpointAddr);
         vm.expectRevert(
             abi.encodeWithSelector(IWormholeGuardiansAdapter.InvalidPeer.selector, srcChain, address(srcAdapter))
         );
-        srcAdapter.receiveMessage(vaa);
+        otherDestAdapter.receiveMessage(vaa);
 
         // An invalid VAA should revert.
         destWormhole.setValidFlag(false, "This is bad!");
