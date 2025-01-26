@@ -1,0 +1,28 @@
+[package]
+name = "wormhole-guardian-adapter"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "wormhole_guardian_adapter"
+
+[features]
+default = ["mainnet", "solana"]
+mainnet = ["wormhole-solana-consts/mainnet", "wormhole-anchor-sdk/mainnet"]
+testnet = ["wormhole-solana-consts/testnet", "wormhole-anchor-sdk/solana-devnet"]
+localnet = ["wormhole-solana-consts/localnet", "wormhole-anchor-sdk/tilt-devnet"]
+solana = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "wormhole-anchor-sdk/idl-build", "wormhole-anchor-sdk/mainnet"]
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed", "event-cpi"] }
+cfg-if.workspace = true
+wormhole-anchor-sdk.workspace = true
+wormhole-raw-vaas = { git = "https://github.com/evan-gray/wormhole-sdk-rs.git", rev = "773e5f5dcc2628e65b705c8446a55d76adbb8027" }
+wormhole-solana-consts = "0.3.0-alpha.1"

@@ -1,0 +1,638 @@
+{
+  "address": "",
+  "metadata": {
+    "name": "mock_integrator",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "docs": [
+    "This module serves as a mock integrator to demonstrate how to call the register function",
+    "in the endpoint program. It's designed to simulate the process of registering an integrator,",
+    "which requires a Cross-Program Invocation (CPI) call with a Program Derived Address (PDA) signer."
+  ],
+  "instructions": [
+    {
+      "name": "invoke_exec_message",
+      "docs": [
+        "Invokes the exec_message instruction on the endpoint program via CPI"
+      ],
+      "discriminator": [
+        129,
+        108,
+        77,
+        15,
+        123,
+        111,
+        235,
+        33
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integrator_program_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  110,
+                  100,
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "attestation_info",
+          "docs": [
+            "The attestation info account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "event_authority",
+          "docs": [
+            "The event authority PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "The system program"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "endpoint_program",
+          "docs": [
+            "The endpoint program"
+          ],
+          "address": "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ExecMessageArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "invoke_recv_message",
+      "docs": [
+        "Invokes the recv_message instruction on the endpoint program via CPI"
+      ],
+      "discriminator": [
+        167,
+        145,
+        80,
+        205,
+        25,
+        193,
+        214,
+        11
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integrator_program_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  110,
+                  100,
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "attestation_info",
+          "docs": [
+            "The attestation info account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "integrator_chain_config",
+          "docs": [
+            "The integrator chain config account"
+          ]
+        },
+        {
+          "name": "event_authority",
+          "docs": [
+            "The event authority PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "The system program"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "endpoint_program",
+          "docs": [
+            "The endpoint program"
+          ],
+          "address": "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "RecvMessageArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "invoke_register",
+      "docs": [
+        "Invokes the register function in the endpoint program via a CPI call.",
+        "This function demonstrates how to properly set up the accounts and sign the transaction",
+        "using a PDA, which is required for the registration process."
+      ],
+      "discriminator": [
+        85,
+        62,
+        89,
+        129,
+        245,
+        134,
+        142,
+        172
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integrator_config",
+          "writable": true
+        },
+        {
+          "name": "sequence_tracker",
+          "writable": true
+        },
+        {
+          "name": "integrator_program_pda",
+          "docs": [
+            "The integrator program's PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  110,
+                  100,
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority",
+          "docs": [
+            "The event authority PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "The System Program"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "endpoint_program",
+          "address": "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "InvokeRegisterArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "invoke_send_message",
+      "discriminator": [
+        255,
+        171,
+        48,
+        229,
+        61,
+        31,
+        28,
+        202
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integrator_program_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  110,
+                  100,
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "integrator_chain_config",
+          "writable": true
+        },
+        {
+          "name": "outbox_message",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "sequence_tracker",
+          "writable": true
+        },
+        {
+          "name": "event_authority",
+          "docs": [
+            "The event authority PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
+        },
+        {
+          "name": "endpoint_program",
+          "address": "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "InvokeSendMessageArgs"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "types": [
+    {
+      "name": "ExecMessageArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "integrator_program_pda_bump",
+            "type": "u8"
+          },
+          {
+            "name": "src_chain",
+            "type": "u16"
+          },
+          {
+            "name": "src_addr",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "sequence",
+            "type": "u64"
+          },
+          {
+            "name": "dst_chain",
+            "type": "u16"
+          },
+          {
+            "name": "integrator_program_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "payload_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvokeRegisterArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvokeSendMessageArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dst_chain",
+            "type": "u16"
+          },
+          {
+            "name": "dst_addr",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "payload_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RecvMessageArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "integrator_program_pda_bump",
+            "type": "u8"
+          },
+          {
+            "name": "src_chain",
+            "type": "u16"
+          },
+          {
+            "name": "src_addr",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "sequence",
+            "type": "u64"
+          },
+          {
+            "name": "dst_chain",
+            "type": "u16"
+          },
+          {
+            "name": "integrator_program_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "payload_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
