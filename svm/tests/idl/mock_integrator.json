@@ -17,16 +17,7 @@
       "docs": [
         "Invokes the exec_message instruction on the endpoint program via CPI"
       ],
-      "discriminator": [
-        129,
-        108,
-        77,
-        15,
-        123,
-        111,
-        235,
-        33
-      ],
+      "discriminator": [129, 108, 77, 15, 123, 111, 235, 33],
       "accounts": [
         {
           "name": "payer",
@@ -40,25 +31,8 @@
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  110,
-                  100,
-                  112,
-                  111,
-                  105,
-                  110,
-                  116,
-                  95,
-                  105,
-                  110,
-                  116,
-                  101,
-                  103,
-                  114,
-                  97,
-                  116,
-                  111,
-                  114
+                  101, 110, 100, 112, 111, 105, 110, 116, 95, 105, 110, 116,
+                  101, 103, 114, 97, 116, 111, 114
                 ]
               }
             ]
@@ -66,38 +40,19 @@
         },
         {
           "name": "attestation_info",
-          "docs": [
-            "The attestation info account"
-          ],
+          "docs": ["The attestation info account"],
           "writable": true
         },
         {
           "name": "event_authority",
-          "docs": [
-            "The event authority PDA"
-          ],
+          "docs": ["The event authority PDA"],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  95,
-                  95,
-                  101,
-                  118,
-                  101,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
+                  95, 95, 101, 118, 101, 110, 116, 95, 97, 117, 116, 104, 111,
+                  114, 105, 116, 121
                 ]
               }
             ]
@@ -108,16 +63,12 @@
         },
         {
           "name": "system_program",
-          "docs": [
-            "The system program"
-          ],
+          "docs": ["The system program"],
           "address": "11111111111111111111111111111111"
         },
         {
           "name": "endpoint_program",
-          "docs": [
-            "The endpoint program"
-          ],
+          "docs": ["The endpoint program"],
           "address": "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
         }
       ],
@@ -137,16 +88,7 @@
       "docs": [
         "Invokes the recv_message instruction on the endpoint program via CPI"
       ],
-      "discriminator": [
-        167,
-        145,
-        80,
-        205,
-        25,
-        193,
-        214,
-        11
-      ],
+      "discriminator": [167, 145, 80, 205, 25, 193, 214, 11],
       "accounts": [
         {
           "name": "payer",
@@ -160,25 +102,8 @@
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  110,
-                  100,
-                  112,
-                  111,
-                  105,
-                  110,
-                  116,
-                  95,
-                  105,
-                  110,
-                  116,
-                  101,
-                  103,
-                  114,
-                  97,
-                  116,
-                  111,
-                  114
+                  101, 110, 100, 112, 111, 105, 110, 116, 95, 105, 110, 116,
+                  101, 103, 114, 97, 116, 111, 114
                 ]
               }
             ]
@@ -186,44 +111,23 @@
         },
         {
           "name": "attestation_info",
-          "docs": [
-            "The attestation info account"
-          ],
+          "docs": ["The attestation info account"],
           "writable": true
         },
         {
           "name": "integrator_chain_config",
-          "docs": [
-            "The integrator chain config account"
-          ]
+          "docs": ["The integrator chain config account"]
         },
         {
           "name": "event_authority",
-          "docs": [
-            "The event authority PDA"
-          ],
+          "docs": ["The event authority PDA"],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  95,
-                  95,
-                  101,
-                  118,
-                  101,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
+                  95, 95, 101, 118, 101, 110, 116, 95, 97, 117, 116, 104, 111,
+                  114, 105, 116, 121
                 ]
               }
             ]
@@ -234,16 +138,12 @@
         },
         {
           "name": "system_program",
-          "docs": [
-            "The system program"
-          ],
+          "docs": ["The system program"],
           "address": "11111111111111111111111111111111"
         },
         {
           "name": "endpoint_program",
-          "docs": [
-            "The endpoint program"
-          ],
+          "docs": ["The endpoint program"],
           "address": "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
         }
       ],
@@ -265,16 +165,7 @@
         "This function demonstrates how to properly set up the accounts and sign the transaction",
         "using a PDA, which is required for the registration process."
       ],
-      "discriminator": [
-        85,
-        62,
-        89,
-        129,
-        245,
-        134,
-        142,
-        172
-      ],
+      "discriminator": [85, 62, 89, 129, 245, 134, 142, 172],
       "accounts": [
         {
           "name": "payer",
@@ -291,33 +182,14 @@
         },
         {
           "name": "integrator_program_pda",
-          "docs": [
-            "The integrator program's PDA"
-          ],
+          "docs": ["The integrator program's PDA"],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  110,
-                  100,
-                  112,
-                  111,
-                  105,
-                  110,
-                  116,
-                  95,
-                  105,
-                  110,
-                  116,
-                  101,
-                  103,
-                  114,
-                  97,
-                  116,
-                  111,
-                  114
+                  101, 110, 100, 112, 111, 105, 110, 116, 95, 105, 110, 116,
+                  101, 103, 114, 97, 116, 111, 114
                 ]
               }
             ]
@@ -325,31 +197,14 @@
         },
         {
           "name": "event_authority",
-          "docs": [
-            "The event authority PDA"
-          ],
+          "docs": ["The event authority PDA"],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  95,
-                  95,
-                  101,
-                  118,
-                  101,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
+                  95, 95, 101, 118, 101, 110, 116, 95, 97, 117, 116, 104, 111,
+                  114, 105, 116, 121
                 ]
               }
             ]
@@ -360,9 +215,7 @@
         },
         {
           "name": "system_program",
-          "docs": [
-            "The System Program"
-          ],
+          "docs": ["The System Program"],
           "address": "11111111111111111111111111111111"
         },
         {
@@ -383,16 +236,7 @@
     },
     {
       "name": "invoke_send_message",
-      "discriminator": [
-        255,
-        171,
-        48,
-        229,
-        61,
-        31,
-        28,
-        202
-      ],
+      "discriminator": [255, 171, 48, 229, 61, 31, 28, 202],
       "accounts": [
         {
           "name": "payer",
@@ -406,25 +250,8 @@
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  110,
-                  100,
-                  112,
-                  111,
-                  105,
-                  110,
-                  116,
-                  95,
-                  105,
-                  110,
-                  116,
-                  101,
-                  103,
-                  114,
-                  97,
-                  116,
-                  111,
-                  114
+                  101, 110, 100, 112, 111, 105, 110, 116, 95, 105, 110, 116,
+                  101, 103, 114, 97, 116, 111, 114
                 ]
               }
             ]
@@ -445,31 +272,14 @@
         },
         {
           "name": "event_authority",
-          "docs": [
-            "The event authority PDA"
-          ],
+          "docs": ["The event authority PDA"],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  95,
-                  95,
-                  101,
-                  118,
-                  101,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
+                  95, 95, 101, 118, 101, 110, 116, 95, 97, 117, 116, 104, 111,
+                  114, 105, 116, 121
                 ]
               }
             ]
@@ -516,10 +326,7 @@
           {
             "name": "src_addr",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
@@ -537,10 +344,7 @@
           {
             "name": "payload_hash",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           }
         ]
@@ -570,19 +374,13 @@
           {
             "name": "dst_addr",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
             "name": "payload_hash",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           }
         ]
@@ -604,10 +402,7 @@
           {
             "name": "src_addr",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
@@ -625,10 +420,7 @@
           {
             "name": "payload_hash",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           }
         ]

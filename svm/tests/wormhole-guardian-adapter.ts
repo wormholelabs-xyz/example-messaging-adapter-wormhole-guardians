@@ -34,42 +34,42 @@ describe("wormhole-guardian-adapter", () => {
     .WormholeGuardianAdapter as Program<WormholeGuardianAdapter>;
   const endpointProgram = new Program<Endpoint>(
     { ...(endpointIDL as Endpoint), address: ENDPOINT_PROGRAM_ID },
-    provider
+    provider,
   );
   const postShimProgram = new Program<WormholePostMessageShim>(
-    WormholePostMessageShimIdl as WormholePostMessageShim
+    WormholePostMessageShimIdl as WormholePostMessageShim,
   );
   const verifyShimProgram = new Program<WormholeVerifyVaaShim>(
-    WormholeVerifyVaaShimIdl as WormholeVerifyVaaShim
+    WormholeVerifyVaaShimIdl as WormholeVerifyVaaShim,
   );
   const integratorProgram = new Program<MockIntegrator>(
     { ...mockIntegratorIdl, address: INTEGRATOR_PROGRAM_ID } as any,
-    provider
+    provider,
   );
 
   const ethTransceiver: ChainAddress = {
     chain: "Ethereum",
     address: new UniversalAddress(
-      encoding.bytes.encode("transceiver".padStart(32, "\0"))
+      encoding.bytes.encode("transceiver".padStart(32, "\0")),
     ),
   };
   const ethEmitter = new testing.mocks.MockEmitter(
     ethTransceiver.address as UniversalAddress,
     "Ethereum",
-    0n
+    0n,
   );
   const ethChain = chainToChainId(ethTransceiver.chain);
 
   const ethTransceiver2: ChainAddress = {
     chain: "Ethereum",
     address: new UniversalAddress(
-      encoding.bytes.encode("transceiver2".padStart(32, "\0"))
+      encoding.bytes.encode("transceiver2".padStart(32, "\0")),
     ),
   };
   const ethEmitter2 = new testing.mocks.MockEmitter(
     ethTransceiver2.address as UniversalAddress,
     "Ethereum",
-    0n
+    0n,
   );
 
   // Test accounts
@@ -86,7 +86,7 @@ describe("wormhole-guardian-adapter", () => {
     chainBuffer.writeUInt16BE(chainId);
     const [peerPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from("peer"), chainBuffer],
-      guardianAdapter.programId
+      guardianAdapter.programId,
     );
     return peerPDA;
   };
@@ -94,7 +94,7 @@ describe("wormhole-guardian-adapter", () => {
   const setPeer = async (
     chainId: number,
     contract: number[] | Uint8Array,
-    signer: Keypair
+    signer: Keypair,
   ) => {
     return guardianAdapter.methods
       .setPeer({
@@ -114,7 +114,7 @@ describe("wormhole-guardian-adapter", () => {
 
   const expectTransactionToFail = async (
     promise: Promise<any>,
-    expectedError: string
+    expectedError: string,
   ) => {
     try {
       await promise;
@@ -128,14 +128,14 @@ describe("wormhole-guardian-adapter", () => {
     // Airdrop some SOL to the payer
     const signature = await provider.connection.requestAirdrop(
       payer.publicKey,
-      2 * web3.LAMPORTS_PER_SOL
+      2 * web3.LAMPORTS_PER_SOL,
     );
     await provider.connection.confirmTransaction(signature);
 
     // Generate PDA for config
     [configPDA, configBump] = PublicKey.findProgramAddressSync(
       [Buffer.from("config")],
-      guardianAdapter.programId
+      guardianAdapter.programId,
     );
   });
 
@@ -143,7 +143,7 @@ describe("wormhole-guardian-adapter", () => {
     admin: PublicKey,
     wormholeProgram: PublicKey,
     consistencyLevel: { confirmed: {} } | { finalized: {} },
-    signer: Keypair
+    signer: Keypair,
   ) => {
     return guardianAdapter.methods
       .initialize({
@@ -202,7 +202,7 @@ describe("wormhole-guardian-adapter", () => {
     expectedAdmin: PublicKey | null,
     expectedPendingAdmin: PublicKey | null,
     expectedWormholeProgram?: PublicKey,
-    expectedConsistencyLevel?: { confirmed: {} } | { finalized: {} }
+    expectedConsistencyLevel?: { confirmed: {} } | { finalized: {} },
   ) => {
     const config = await guardianAdapter.account.config.fetch(configPDA);
     if (expectedAdmin === null) {
@@ -214,13 +214,13 @@ describe("wormhole-guardian-adapter", () => {
       expect(config.pendingAdmin).to.be.null;
     } else {
       expect(config.pendingAdmin?.toString()).to.equal(
-        expectedPendingAdmin.toString()
+        expectedPendingAdmin.toString(),
       );
     }
 
     if (expectedWormholeProgram) {
       expect(config.wormholeProgram.toString()).to.equal(
-        expectedWormholeProgram.toString()
+        expectedWormholeProgram.toString(),
       );
     }
     if (expectedConsistencyLevel !== undefined) {
@@ -244,7 +244,7 @@ describe("wormhole-guardian-adapter", () => {
       it("fails if not admin", async () => {
         await expectTransactionToFail(
           transferAdmin(newAdmin.publicKey, newAdmin),
-          "CallerNotAdmin"
+          "CallerNotAdmin",
         );
       });
 
@@ -257,7 +257,7 @@ describe("wormhole-guardian-adapter", () => {
         const anotherAdmin = Keypair.generate();
         await expectTransactionToFail(
           transferAdmin(anotherAdmin.publicKey, payer),
-          "AdminTransferPending"
+          "AdminTransferPending",
         );
         await verifyConfig(payer.publicKey, newAdmin.publicKey);
       });
@@ -268,7 +268,7 @@ describe("wormhole-guardian-adapter", () => {
         const wrongClaimer = Keypair.generate();
         await expectTransactionToFail(
           claimAdmin(wrongClaimer),
-          "CallerNotAdmin"
+          "CallerNotAdmin",
         );
       });
 
@@ -286,7 +286,7 @@ describe("wormhole-guardian-adapter", () => {
       it("fails if no transfer pending", async () => {
         await expectTransactionToFail(
           claimAdmin(newAdmin),
-          "NoAdminUpdatePending"
+          "NoAdminUpdatePending",
         );
       });
     });
@@ -296,7 +296,7 @@ describe("wormhole-guardian-adapter", () => {
         const newerAdmin = Keypair.generate();
         await expectTransactionToFail(
           updateAdmin(newerAdmin.publicKey, payer),
-          "CallerNotAdmin"
+          "CallerNotAdmin",
         );
       });
 
@@ -311,7 +311,7 @@ describe("wormhole-guardian-adapter", () => {
         const newerAdmin = Keypair.generate();
         await expectTransactionToFail(
           updateAdmin(newerAdmin.publicKey, newAdmin),
-          "AdminTransferPending"
+          "AdminTransferPending",
         );
 
         // Claim back admin
@@ -331,7 +331,7 @@ describe("wormhole-guardian-adapter", () => {
         const peerAccount = await guardianAdapter.account.peer.fetch(peerPDA);
         expect(peerAccount.chain).to.equal(peerChain);
         expect(Buffer.from(peerAccount.contract)).to.deep.equal(
-          peerContract.toUint8Array()
+          peerContract.toUint8Array(),
         );
       });
 
@@ -341,7 +341,7 @@ describe("wormhole-guardian-adapter", () => {
 
         await expectTransactionToFail(
           setPeer(peerChain, newContract.toBytes(), payer),
-          "PeerAlreadySet"
+          "PeerAlreadySet",
         );
       });
 
@@ -350,7 +350,7 @@ describe("wormhole-guardian-adapter", () => {
 
         await expectTransactionToFail(
           setPeer(0, peerContract.toBytes(), payer),
-          "InvalidChain"
+          "InvalidChain",
         );
       });
 
@@ -360,7 +360,7 @@ describe("wormhole-guardian-adapter", () => {
 
         await expectTransactionToFail(
           setPeer(peerChain, zeroContract, payer),
-          "InvalidPeerZeroAddress"
+          "InvalidPeerZeroAddress",
         );
       });
 
@@ -372,13 +372,13 @@ describe("wormhole-guardian-adapter", () => {
         // Airdrop some SOL to the not-admin account
         const signature = await provider.connection.requestAirdrop(
           notAdmin.publicKey,
-          web3.LAMPORTS_PER_SOL
+          web3.LAMPORTS_PER_SOL,
         );
         await provider.connection.confirmTransaction(signature);
 
         await expectTransactionToFail(
           setPeer(peerChain, peerContract.toBytes(), notAdmin),
-          "CallerNotAdmin"
+          "CallerNotAdmin",
         );
       });
     });
@@ -388,7 +388,7 @@ describe("wormhole-guardian-adapter", () => {
         const newerAdmin = Keypair.generate();
         await expectTransactionToFail(
           discardAdmin(newerAdmin),
-          "CallerNotAdmin"
+          "CallerNotAdmin",
         );
       });
 
@@ -397,7 +397,7 @@ describe("wormhole-guardian-adapter", () => {
         await transferAdmin(Keypair.generate().publicKey, payer);
         await expectTransactionToFail(
           discardAdmin(payer),
-          "AdminTransferPending"
+          "AdminTransferPending",
         );
 
         // Claim back
@@ -429,22 +429,22 @@ describe("wormhole-guardian-adapter", () => {
         Buffer.from("integrator_config"),
         integratorProgram.programId.toBuffer(),
       ],
-      endpointProgram.programId
+      endpointProgram.programId,
     );
 
     const [integratorProgramPda] = PublicKey.findProgramAddressSync(
       [Buffer.from("endpoint_integrator")],
-      integratorProgram.programId
+      integratorProgram.programId,
     );
 
     const [sequenceTracker] = PublicKey.findProgramAddressSync(
       [Buffer.from("sequence_tracker"), integratorProgram.programId.toBuffer()],
-      endpointProgram.programId
+      endpointProgram.programId,
     );
 
     const [eventAuthority] = PublicKey.findProgramAddressSync(
       [Buffer.from("__event_authority")],
-      endpointProgram.programId
+      endpointProgram.programId,
     );
 
     const [integratorChainConfig] = PublicKey.findProgramAddressSync(
@@ -453,7 +453,7 @@ describe("wormhole-guardian-adapter", () => {
         integratorProgram.programId.toBuffer(),
         chainBuffer,
       ],
-      endpointProgram.programId
+      endpointProgram.programId,
     );
 
     const [adapterInfo] = PublicKey.findProgramAddressSync(
@@ -462,7 +462,7 @@ describe("wormhole-guardian-adapter", () => {
         integratorProgram.programId.toBuffer(),
         guardianAdapter.programId.toBuffer(),
       ],
-      endpointProgram.programId
+      endpointProgram.programId,
     );
 
     return {
@@ -563,14 +563,14 @@ describe("wormhole-guardian-adapter", () => {
 
     const createAndPostSignatures = async (
       expectedPayload: string,
-      emitter: testing.mocks.MockEmitter
+      emitter: testing.mocks.MockEmitter,
     ) => {
       const guardians = new testing.mocks.MockGuardians(0, [
         "cfb12303a19cde580bb4dd771639b0d26bc68353645571a8cff516ab2ee113a0",
       ]);
 
       const payloadBytes = Uint8Array.from(
-        Buffer.from(expectedPayload.slice(2), "hex")
+        Buffer.from(expectedPayload.slice(2), "hex"),
       );
       const published = emitter.publishMessage(0, payloadBytes, 200);
       const vaaBody = published.subarray(1 + 4 + 1);
@@ -586,7 +586,7 @@ describe("wormhole-guardian-adapter", () => {
             rawVaa.signatures.map((s) => [
               s.guardianIndex,
               ...s.signature.encode(),
-            ])
+            ]),
           )
           .accounts({ guardianSignatures: signatureKeypair.publicKey })
           .signers([signatureKeypair])
@@ -615,11 +615,11 @@ describe("wormhole-guardian-adapter", () => {
       it("can pick up message", async () => {
         const [adapterPda] = PublicKey.findProgramAddressSync(
           [Buffer.from("adapter_pda")],
-          guardianAdapter.programId
+          guardianAdapter.programId,
         );
 
         const outboxAccount = await guardianAdapter.account.outboxMessage.fetch(
-          outboxMessage.publicKey
+          outboxMessage.publicKey,
         );
 
         await guardianAdapter.methods
@@ -632,17 +632,17 @@ describe("wormhole-guardian-adapter", () => {
                 Buffer.from("Sequence"),
                 anchor.web3.PublicKey.findProgramAddressSync(
                   [Buffer.from("emitter")],
-                  guardianAdapter.programId
+                  guardianAdapter.programId,
                 )[0].toBuffer(),
               ],
               new anchor.web3.PublicKey(
-                "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth"
-              )
+                "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth",
+              ),
             )[0],
             wormholePostMessageShimEa:
               anchor.web3.PublicKey.findProgramAddressSync(
                 [Buffer.from("__event_authority")],
-                postShimProgram.programId
+                postShimProgram.programId,
               )[0],
           })
           .accountsPartial({
@@ -657,7 +657,7 @@ describe("wormhole-guardian-adapter", () => {
         const verifyWormholeMessage = async () => {
           const [wormholeMessage] = PublicKey.findProgramAddressSync(
             [Buffer.from("message"), outboxMessage.publicKey.toBuffer()],
-            guardianAdapter.programId
+            guardianAdapter.programId,
           );
           const messageData = (
             await provider.connection.getAccountInfo(wormholeMessage)
@@ -672,7 +672,7 @@ describe("wormhole-guardian-adapter", () => {
                 Number(outboxAccount.dstChain),
                 Buffer.from(outboxAccount.dstAddr),
                 Buffer.from(outboxAccount.payloadHash),
-              ]
+              ],
             );
 
             const payloadStart = 3 + (1 + 1 + 4 + 32 + 4 + 4 + 8 + 2 + 32) + 4;
@@ -681,7 +681,7 @@ describe("wormhole-guardian-adapter", () => {
             assert(
               Buffer.from(actualPayload).toString("hex") ===
                 expectedPayload.slice(2),
-              "Wormhole message payload should match expected payload"
+              "Wormhole message payload should match expected payload",
             );
           }
         };
@@ -690,11 +690,11 @@ describe("wormhole-guardian-adapter", () => {
 
         const outboxMessageAccount =
           await endpointProgram.account.outboxMessage.fetchNullable(
-            outboxMessage.publicKey
+            outboxMessage.publicKey,
           );
         assert.isNull(
           outboxMessageAccount,
-          "Outbox message account should be null"
+          "Outbox message account should be null",
         );
       });
     });
@@ -704,16 +704,16 @@ describe("wormhole-guardian-adapter", () => {
       const deriveRecvMessagePDAs = (emitterChain: number = ethChain) => {
         const [configKey] = PublicKey.findProgramAddressSync(
           [Buffer.from("config")],
-          guardianAdapter.programId
+          guardianAdapter.programId,
         );
         const peerKey = getPeerPDA(emitterChain);
         const [adapterPda] = PublicKey.findProgramAddressSync(
           [Buffer.from("adapter_pda")],
-          guardianAdapter.programId
+          guardianAdapter.programId,
         );
         const [eventAuthority] = PublicKey.findProgramAddressSync(
           [Buffer.from("__event_authority")],
-          endpointProgram.programId
+          endpointProgram.programId,
         );
 
         const chainBuffer = Buffer.alloc(2);
@@ -724,7 +724,7 @@ describe("wormhole-guardian-adapter", () => {
             integratorProgram.programId.toBuffer(),
             chainBuffer,
           ],
-          endpointProgram.programId
+          endpointProgram.programId,
         );
 
         return {
@@ -739,7 +739,7 @@ describe("wormhole-guardian-adapter", () => {
 
       const deriveAttestationInfoKey = (
         wormholeMessage: any,
-        emitterChain: number
+        emitterChain: number,
       ) => {
         const packedData = ethers.solidityPacked(
           ["uint16", "bytes32", "uint64", "uint16", "bytes32", "bytes32"],
@@ -750,7 +750,7 @@ describe("wormhole-guardian-adapter", () => {
             wormholeMessage.dstChain,
             wormholeMessage.dstAddr.toUint8Array(),
             wormholeMessage.payloadHash,
-          ]
+          ],
         );
 
         const [attestationInfoKey] = PublicKey.findProgramAddressSync(
@@ -758,7 +758,7 @@ describe("wormhole-guardian-adapter", () => {
             Buffer.from("attestation_info"),
             Buffer.from(ethers.getBytes(keccak256(packedData))),
           ],
-          endpointProgram.programId
+          endpointProgram.programId,
         );
 
         return attestationInfoKey;
@@ -789,12 +789,12 @@ describe("wormhole-guardian-adapter", () => {
         signatureKey: PublicKey,
         guardianSetIndex: number,
         vaaBody: Uint8Array,
-        emitterChain: number
+        emitterChain: number,
       ) => {
         const pdas = deriveRecvMessagePDAs(emitterChain);
         const attestationInfoKey = deriveAttestationInfoKey(
           wormholeMessage,
-          emitterChain
+          emitterChain,
         );
 
         return guardianAdapter.methods
@@ -814,8 +814,8 @@ describe("wormhole-guardian-adapter", () => {
                 })(),
               ],
               new anchor.web3.PublicKey(
-                "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth"
-              )
+                "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth",
+              ),
             )[0],
           })
           .accountsPartial({
@@ -849,7 +849,7 @@ describe("wormhole-guardian-adapter", () => {
             wormholeMessage.dstChain,
             wormholeMessage.dstAddr.toUint8Array(),
             wormholeMessage.payloadHash,
-          ]
+          ],
         );
 
         const { signatureKey, guardianSetIndex, vaaBody } =
@@ -858,36 +858,36 @@ describe("wormhole-guardian-adapter", () => {
 
         const attestationInfoKey = deriveAttestationInfoKey(
           wormholeMessage,
-          emitterChain
+          emitterChain,
         );
         const tx = await executeRecvMessage(
           wormholeMessage,
           signatureKey,
           guardianSetIndex,
           vaaBody,
-          emitterChain
+          emitterChain,
         );
         await tx.rpc();
 
         // Verify attestation info
         const attestationInfo =
           await endpointProgram.account.attestationInfo.fetch(
-            attestationInfoKey
+            attestationInfoKey,
           );
         assert.equal(attestationInfo.srcChain, emitterChain);
         assert.deepEqual(
           attestationInfo.srcAddr,
-          Array.from(ethTransceiver.address.toUint8Array())
+          Array.from(ethTransceiver.address.toUint8Array()),
         );
         assert.equal(attestationInfo.sequence.toNumber(), 0);
         assert.equal(attestationInfo.dstChain, wormholeMessage.dstChain);
         assert.deepEqual(
           attestationInfo.dstAddr,
-          Array.from(wormholeMessage.dstAddr.toUint8Array())
+          Array.from(wormholeMessage.dstAddr.toUint8Array()),
         );
         assert.deepEqual(
           attestationInfo.payloadHash,
-          Array.from(wormholeMessage.payloadHash)
+          Array.from(wormholeMessage.payloadHash),
         );
       });
 
@@ -911,7 +911,7 @@ describe("wormhole-guardian-adapter", () => {
             wormholeMessage.dstAddr.toUint8Array(),
             wormholeMessage.payloadHash,
             0x00, // Extra byte added
-          ]
+          ],
         );
 
         const { signatureKey, guardianSetIndex, vaaBody } =
@@ -921,7 +921,7 @@ describe("wormhole-guardian-adapter", () => {
           signatureKey,
           guardianSetIndex,
           vaaBody,
-          emitterChain
+          emitterChain,
         );
         await expectTransactionToFail(tx.rpc(), "InvalidPayloadLength");
       });
@@ -944,7 +944,7 @@ describe("wormhole-guardian-adapter", () => {
             wormholeMessage.dstChain,
             wormholeMessage.dstAddr.toUint8Array(),
             wormholeMessage.payloadHash,
-          ]
+          ],
         );
 
         const { signatureKey, guardianSetIndex, vaaBody } =
@@ -954,7 +954,7 @@ describe("wormhole-guardian-adapter", () => {
           signatureKey,
           guardianSetIndex,
           vaaBody,
-          emitterChain
+          emitterChain,
         );
         await expectTransactionToFail(tx.rpc(), "InvalidPeer");
       });
@@ -978,7 +978,7 @@ describe("wormhole-guardian-adapter", () => {
             wormholeMessage.dstChain,
             wormholeMessage.dstAddr.toUint8Array(),
             wormholeMessage.payloadHash,
-          ]
+          ],
         );
 
         const { signatureKey, guardianSetIndex, vaaBody } =
@@ -988,7 +988,7 @@ describe("wormhole-guardian-adapter", () => {
           signatureKey,
           guardianSetIndex,
           vaaBody,
-          emitterChain
+          emitterChain,
         );
         await expectTransactionToFail(tx.rpc(), "InvalidChain");
       });

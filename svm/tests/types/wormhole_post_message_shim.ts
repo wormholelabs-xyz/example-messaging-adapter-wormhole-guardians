@@ -5,17 +5,17 @@
  * IDL can be found at `target/idl/wormhole_post_message_shim.json`.
  */
 export type WormholePostMessageShim = {
-  "address": "EtZMZM22ViKMo4r5y4Anovs3wKQ2owUmDpjygnMMcdEX",
-  "metadata": {
-    "name": "wormholePostMessageShim",
-    "version": "0.1.0",
-    "spec": "0.1.0",
-    "description": "Created with Anchor"
-  },
-  "instructions": [
+  address: "EtZMZM22ViKMo4r5y4Anovs3wKQ2owUmDpjygnMMcdEX";
+  metadata: {
+    name: "wormholePostMessageShim";
+    version: "0.1.0";
+    spec: "0.1.0";
+    description: "Created with Anchor";
+  };
+  instructions: [
     {
-      "name": "postMessage",
-      "docs": [
+      name: "postMessage";
+      docs: [
         "This instruction is intended to be a significantly cheaper alternative to `post_message` on the core bridge.",
         "It achieves this by reusing the message account, per emitter, via `post_message_unreliable` and",
         "emitting a CPI event for the guardian to observe containing the information previously only found",
@@ -33,99 +33,82 @@ export type WormholePostMessageShim = {
         "",
         "Integration case",
         "Integrator Program -> shim `PostMessage` -> core `0x8`",
-        "-> shim `MesssageEvent`"
-      ],
-      "discriminator": [
-        214,
-        50,
-        100,
-        209,
-        38,
-        34,
-        7,
-        76
-      ],
-      "accounts": [
+        "-> shim `MesssageEvent`",
+      ];
+      discriminator: [214, 50, 100, 209, 38, 34, 7, 76];
+      accounts: [
         {
-          "name": "bridge",
-          "writable": true,
-          "address": "2yVjuQwpsvdsrywzsJJVs9Ueh4zayyo5DYJbBNc3DDpn"
+          name: "bridge";
+          writable: true;
+          address: "2yVjuQwpsvdsrywzsJJVs9Ueh4zayyo5DYJbBNc3DDpn";
         },
         {
-          "name": "message",
-          "docs": [
+          name: "message";
+          docs: [
             "This program uses a PDA per emitter, since these are already bottle-necked by sequence and",
             "the bridge enforces that emitter must be identical for reused accounts.",
             "While this could be managed by the integrator, it seems more effective to have the shim manage these accounts.",
-            "Bonus, this also allows Anchor to automatically handle deriving the address."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
+            "Bonus, this also allows Anchor to automatically handle deriving the address.",
+          ];
+          writable: true;
+          pda: {
+            seeds: [
               {
-                "kind": "account",
-                "path": "emitter"
-              }
-            ]
-          }
+                kind: "account";
+                path: "emitter";
+              },
+            ];
+          };
         },
         {
-          "name": "emitter",
-          "signer": true
+          name: "emitter";
+          signer: true;
         },
         {
-          "name": "sequence",
-          "docs": [
+          name: "sequence";
+          docs: [
             "Explicitly do not re-derive this account. The core bridge verifies the derivation anyway and",
-            "as of Anchor 0.30.1, auto-derivation for other programs' accounts via IDL doesn't work."
-          ],
-          "writable": true
+            "as of Anchor 0.30.1, auto-derivation for other programs' accounts via IDL doesn't work.",
+          ];
+          writable: true;
         },
         {
-          "name": "payer",
-          "docs": [
-            "Payer will pay Wormhole fee to post a message."
-          ],
-          "writable": true,
-          "signer": true
+          name: "payer";
+          docs: ["Payer will pay Wormhole fee to post a message."];
+          writable: true;
+          signer: true;
         },
         {
-          "name": "feeCollector",
-          "writable": true,
-          "address": "9bFNrXNb2WTx8fMHXCheaZqkLZ3YCCaiqTftHxeintHy"
+          name: "feeCollector";
+          writable: true;
+          address: "9bFNrXNb2WTx8fMHXCheaZqkLZ3YCCaiqTftHxeintHy";
         },
         {
-          "name": "clock",
-          "docs": [
-            "Clock sysvar."
-          ],
-          "address": "SysvarC1ock11111111111111111111111111111111"
+          name: "clock";
+          docs: ["Clock sysvar."];
+          address: "SysvarC1ock11111111111111111111111111111111";
         },
         {
-          "name": "systemProgram",
-          "docs": [
-            "System program."
-          ],
-          "address": "11111111111111111111111111111111"
+          name: "systemProgram";
+          docs: ["System program."];
+          address: "11111111111111111111111111111111";
         },
         {
-          "name": "rent",
-          "docs": [
-            "Rent sysvar."
-          ],
-          "address": "SysvarRent111111111111111111111111111111111"
+          name: "rent";
+          docs: ["Rent sysvar."];
+          address: "SysvarRent111111111111111111111111111111111";
         },
         {
-          "name": "wormholeProgram",
-          "address": "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth"
+          name: "wormholeProgram";
+          address: "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth";
         },
         {
-          "name": "eventAuthority",
-          "pda": {
-            "seeds": [
+          name: "eventAuthority";
+          pda: {
+            seeds: [
               {
-                "kind": "const",
-                "value": [
+                kind: "const";
+                value: [
                   95,
                   95,
                   101,
@@ -142,85 +125,76 @@ export type WormholePostMessageShim = {
                   114,
                   105,
                   116,
-                  121
-                ]
-              }
-            ]
-          }
+                  121,
+                ];
+              },
+            ];
+          };
         },
         {
-          "name": "program"
-        }
-      ],
-      "args": [
+          name: "program";
+        },
+      ];
+      args: [
         {
-          "name": "nonce",
-          "type": "u32"
+          name: "nonce";
+          type: "u32";
         },
         {
-          "name": "consistencyLevel",
-          "type": {
-            "defined": {
-              "name": "finality"
-            }
-          }
+          name: "consistencyLevel";
+          type: {
+            defined: {
+              name: "finality";
+            };
+          };
         },
         {
-          "name": "payload",
-          "type": "bytes"
-        }
-      ]
-    }
-  ],
-  "events": [
+          name: "payload";
+          type: "bytes";
+        },
+      ];
+    },
+  ];
+  events: [
     {
-      "name": "messageEvent",
-      "discriminator": [
-        68,
-        27,
-        143,
-        0,
-        77,
-        76,
-        137,
-        112
-      ]
-    }
-  ],
-  "types": [
+      name: "messageEvent";
+      discriminator: [68, 27, 143, 0, 77, 76, 137, 112];
+    },
+  ];
+  types: [
     {
-      "name": "finality",
-      "type": {
-        "kind": "enum",
-        "variants": [
+      name: "finality";
+      type: {
+        kind: "enum";
+        variants: [
           {
-            "name": "confirmed"
+            name: "confirmed";
           },
           {
-            "name": "finalized"
-          }
-        ]
-      }
+            name: "finalized";
+          },
+        ];
+      };
     },
     {
-      "name": "messageEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
+      name: "messageEvent";
+      type: {
+        kind: "struct";
+        fields: [
           {
-            "name": "emitter",
-            "type": "pubkey"
+            name: "emitter";
+            type: "pubkey";
           },
           {
-            "name": "sequence",
-            "type": "u64"
+            name: "sequence";
+            type: "u64";
           },
           {
-            "name": "submissionTime",
-            "type": "u32"
-          }
-        ]
-      }
-    }
-  ]
+            name: "submissionTime";
+            type: "u32";
+          },
+        ];
+      };
+    },
+  ];
 };

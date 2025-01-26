@@ -12,16 +12,7 @@
       "docs": [
         "Allows the initial payer to close the signature account, reclaiming the rent taken by `post_signatures`."
       ],
-      "discriminator": [
-        192,
-        65,
-        63,
-        117,
-        213,
-        138,
-        179,
-        190
-      ],
+      "discriminator": [192, 65, 63, 117, 213, 138, 179, 190],
       "accounts": [
         {
           "name": "guardian_signatures",
@@ -31,9 +22,7 @@
           "name": "refund_recipient",
           "writable": true,
           "signer": true,
-          "relations": [
-            "guardian_signatures"
-          ]
+          "relations": ["guardian_signatures"]
         }
       ],
       "args": []
@@ -52,16 +41,7 @@
         "",
         "The GuardianSignatures account can be closed by the initial payer via close_signatures, which will refund the initial payer."
       ],
-      "discriminator": [
-        138,
-        2,
-        53,
-        166,
-        45,
-        77,
-        137,
-        51
-      ],
+      "discriminator": [138, 2, 53, 166, 45, 77, 137, 51],
       "accounts": [
         {
           "name": "payer",
@@ -91,10 +71,7 @@
           "name": "guardian_signatures",
           "type": {
             "vec": {
-              "array": [
-                "u8",
-                66
-              ]
+              "array": ["u8", 66]
             }
           }
         }
@@ -125,39 +102,16 @@
         "let digest = keccak::hash(message_hash.as_slice()).to_bytes();",
         "```"
       ],
-      "discriminator": [
-        147,
-        254,
-        88,
-        41,
-        24,
-        223,
-        219,
-        29
-      ],
+      "discriminator": [147, 254, 88, 41, 24, 223, 219, 29],
       "accounts": [
         {
           "name": "guardian_set",
-          "docs": [
-            "Guardian set used for signature verification."
-          ],
+          "docs": ["Guardian set used for signature verification."],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  71,
-                  117,
-                  97,
-                  114,
-                  100,
-                  105,
-                  97,
-                  110,
-                  83,
-                  101,
-                  116
-                ]
+                "value": [71, 117, 97, 114, 100, 105, 97, 110, 83, 101, 116]
               },
               {
                 "kind": "account",
@@ -168,38 +122,9 @@
             "program": {
               "kind": "const",
               "value": [
-                14,
-                10,
-                88,
-                154,
-                65,
-                165,
-                95,
-                189,
-                102,
-                197,
-                42,
-                71,
-                95,
-                45,
-                146,
-                166,
-                211,
-                220,
-                155,
-                71,
-                71,
-                17,
-                76,
-                185,
-                175,
-                130,
-                90,
-                152,
-                181,
-                69,
-                211,
-                206
+                14, 10, 88, 154, 65, 165, 95, 189, 102, 197, 42, 71, 95, 45,
+                146, 166, 211, 220, 155, 71, 71, 17, 76, 185, 175, 130, 90, 152,
+                181, 69, 211, 206
               ]
             }
           }
@@ -215,10 +140,7 @@
         {
           "name": "digest",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
@@ -227,29 +149,11 @@
   "accounts": [
     {
       "name": "GuardianSignatures",
-      "discriminator": [
-        203,
-        184,
-        130,
-        157,
-        113,
-        14,
-        184,
-        83
-      ]
+      "discriminator": [203, 184, 130, 157, 113, 14, 184, 83]
     },
     {
       "name": "WormholeGuardianSet",
-      "discriminator": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ]
+      "discriminator": [0, 0, 0, 0, 0, 0, 0, 0]
     }
   ],
   "errors": [
@@ -317,23 +221,15 @@
               "Using big-endian to match the derivation used by the core bridge."
             ],
             "type": {
-              "array": [
-                "u8",
-                4
-              ]
+              "array": ["u8", 4]
             }
           },
           {
             "name": "guardian_signatures",
-            "docs": [
-              "Unverified guardian signatures."
-            ],
+            "docs": ["Unverified guardian signatures."],
             "type": {
               "vec": {
-                "array": [
-                  "u8",
-                  66
-                ]
+                "array": ["u8", 66]
               }
             }
           }
@@ -354,15 +250,10 @@
           },
           {
             "name": "keys",
-            "docs": [
-              "Ethereum-style public keys."
-            ],
+            "docs": ["Ethereum-style public keys."],
             "type": {
               "vec": {
-                "array": [
-                  "u8",
-                  20
-                ]
+                "array": ["u8", 20]
               }
             }
           },
